@@ -15,9 +15,11 @@ ws.on("message", (d) => {
 });
 
 const send = (m) => ws.send(JSON.stringify(m));
-const until = (pred, ms = 10000) =>
+// `from` limits the search to messages received after a mark, for assertions
+// where an identical message earlier in the run would otherwise match.
+const until = (pred, ms = 10000, from = 0) =>
   new Promise((resolve, reject) => {
-    const hit = log.find(pred);
+    const hit = log.slice(from).find(pred);
     if (hit) return resolve(hit);
     const w = { pred, resolve };
     waiters.push(w);
@@ -62,8 +64,12 @@ const d = await until((m) => m.blockId === "d");
 check("blocked statement completes on commit", d.type === "result", `${d.durationMs.toFixed(0)} ms`);
 check("s2 returns to idle", (await until((m) => m.type === "state" && m.session === "s2" && m.state === "idle")) != null);
 
+// A state message carries no query identity, so it cannot serve as an
+// acknowledgement that this particular statement started: the one that arrives
+// might be the previous block's, reported late by the poller. Waiting a beat
+// is what makes this deterministic, and pg_sleep(30) makes the window wide.
 send({ type: "run", blockId: "slow", session: "s1", sql: "SELECT pg_sleep(30);" });
-await until((m) => m.type === "state" && m.session === "s1" && m.state === "running");
+await sleep(500);
 send({ type: "reset-sessions" });
 const abandoned = await until((m) => m.blockId === "slow");
 check("a reset reports the statement it interrupted", abandoned.type === "error", abandoned.error?.message);
