@@ -33,7 +33,7 @@ const check = (name, ok, extra = "") => {
 
 await new Promise((r) => ws.on("open", r));
 
-send({ type: "restore", fixture: "orders" });
+send({ type: "restore", fixture: "orders", force: true });
 const restored = await until((m) => m.type === "restored");
 check("fixture restores", restored.durationMs < 3000, `${restored.durationMs.toFixed(0)} ms`);
 
@@ -61,6 +61,12 @@ send({ type: "run", blockId: "e", session: "s1", sql: "COMMIT;" });
 const d = await until((m) => m.blockId === "d");
 check("blocked statement completes on commit", d.type === "result", `${d.durationMs.toFixed(0)} ms`);
 check("s2 returns to idle", (await until((m) => m.type === "state" && m.session === "s2" && m.state === "idle")) != null);
+
+send({ type: "run", blockId: "slow", session: "s1", sql: "SELECT pg_sleep(30);" });
+await until((m) => m.type === "state" && m.session === "s1" && m.state === "running");
+send({ type: "reset-sessions" });
+const abandoned = await until((m) => m.blockId === "slow");
+check("a reset reports the statement it interrupted", abandoned.type === "error", abandoned.error?.message);
 
 send({ type: "run", blockId: "g", session: "s1", sql: "SET max_parallel_workers_per_gather = 0;" });
 await until((m) => m.blockId === "g");

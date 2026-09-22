@@ -26,6 +26,9 @@ class Session {
   waiting?: string;
   /** Resolves when the in-flight query settles; undefined when idle. */
   inFlight?: Promise<unknown>;
+  /** The block whose query is in flight, and the one abandoned by a reset. */
+  inFlightBlock?: string;
+  abandonedBlock?: string;
 
   constructor(readonly name: SessionName) {}
 }
@@ -148,9 +151,18 @@ export class Lab {
     this.setState(s, "running");
     const query = s.client!.query({ text: sql, rowMode: "array" });
     s.inFlight = query;
+    s.inFlightBlock = blockId;
+
+    /** True once a reset has already reported this block's fate. */
+    const abandoned = () => {
+      if (s.abandonedBlock !== blockId) return false;
+      s.abandonedBlock = undefined;
+      return true;
+    };
 
     try {
       const raw = await query;
+      if (abandoned()) return;
       const results = (Array.isArray(raw) ? raw : [raw]).map(toResult);
       this.emit({
         type: "result",
@@ -161,6 +173,7 @@ export class Lab {
         durationMs: performance.now() - started,
       });
     } catch (err) {
+      if (abandoned()) return;
       this.emit({
         type: "error",
         blockId,
@@ -169,8 +182,9 @@ export class Lab {
         durationMs: performance.now() - started,
       });
     } finally {
-      s.client!.off("notice", onNotice);
+      s.client?.off("notice", onNotice);
       s.inFlight = undefined;
+      s.inFlightBlock = undefined;
       await this.poll();
     }
   }
@@ -184,11 +198,39 @@ export class Lab {
    */
   async resetSessions() {
     for (const s of this.sessions.values()) {
-      await s.client?.end().catch(() => {});
+      const client = s.client;
+      const pid = s.pid;
+      const interrupted = s.inFlightBlock;
+
+      // Drop the reference before closing. client.end() waits for an in-flight
+      // query to finish, so a session running pg_sleep would otherwise stay
+      // visible — and answer the next run — for as long as the sleep lasts.
       s.client = null;
       s.pid = 0;
       s.inFlight = undefined;
+      s.inFlightBlock = undefined;
       this.setState(s, "disconnected");
+
+      // A statement losing its connection must fail loudly (E3). Without this
+      // the block waits for a reply that can never come: navigate away from a
+      // slow query and its panel would stay blank for ever.
+      if (interrupted) {
+        s.abandonedBlock = interrupted;
+        this.emit({
+          type: "error",
+          blockId: interrupted,
+          session: s.name,
+          error: { message: "session was reset while this statement was running" },
+          durationMs: 0,
+        });
+        if (pid) {
+          await this.withAdmin((admin) =>
+            admin.query("SELECT pg_cancel_backend($1)", [pid]),
+          ).catch(() => {});
+        }
+      }
+
+      void client?.end().catch(() => {});
     }
   }
 
@@ -207,8 +249,13 @@ export class Lab {
    * copy their old connection would point at a database that no longer exists.
    */
   async restore(fixture: string, force = false) {
-    if (!force && this.fixture === fixture) return;
     const started = performance.now();
+    // Always answer, even when there is nothing to do: a caller waiting for
+    // the reply must not hang because the fixture happened to be loaded.
+    if (!force && this.fixture === fixture) {
+      this.emit({ type: "restored", fixture, durationMs: 0 });
+      return;
+    }
     await this.resetSessions();
     await this.withAdmin(async (admin) => {
       await admin.query(`DROP DATABASE IF EXISTS ${DEMO_DB} WITH (FORCE)`);

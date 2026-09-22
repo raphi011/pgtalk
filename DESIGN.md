@@ -91,6 +91,13 @@ timeout. Only a dead connection or a protocol error is `failed`.
 **E3. Failures surface.** No cached-output fallback, no silent substitution of
 a recorded result. If a query breaks on stage it breaks visibly.
 
+This includes a statement that loses its connection. Navigating away from a
+slow query resets the session under it, and the block it belonged to is told
+so rather than left waiting for a reply that can never arrive. The interrupted
+backend is cancelled first, because closing a connection waits for its
+in-flight query and a session running `pg_sleep` would otherwise go on
+answering the next slide's blocks.
+
 **E4. Fixture per slide, restored on navigation.** Each slide declares the
 fixture it needs in frontmatter. Navigating to a slide restores that fixture if
 the previous slide used a different one, so any slide can be entered cold —

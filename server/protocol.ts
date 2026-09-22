@@ -35,7 +35,7 @@ export type ClientMessage =
   | { type: "run"; blockId: string; session: SessionName; sql: string }
   | { type: "cancel"; session: SessionName }
   | { type: "reset-sessions" }
-  | { type: "restore"; fixture: string };
+  | { type: "restore"; fixture: string; force?: boolean };
 
 export type ServerMessage =
   /** Session state changed. `waiting` names the wait event when blocked. */

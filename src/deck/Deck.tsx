@@ -117,7 +117,9 @@ export function Deck() {
           setShowNotes((s) => !s);
           break;
         case "r":
-          if (slide?.fixture) lab.restore(slide.fixture);
+          // Force: the fixture is by definition already loaded, and the point
+          // of the key is to undo whatever the last few minutes did to it.
+          if (slide?.fixture) lab.restore(slide.fixture, true);
           break;
         case "g": {
           const answer = prompt(`Slide (1–${deck.length})`);

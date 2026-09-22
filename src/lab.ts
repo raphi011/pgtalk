@@ -99,8 +99,8 @@ export const lab = {
   cancel(session: SessionName) {
     send({ type: "cancel", session });
   },
-  restore(fixture: string) {
-    send({ type: "restore", fixture });
+  restore(fixture: string, force = false) {
+    send({ type: "restore", fixture, force });
   },
   resetSessions() {
     set({ blocks: {}, pending: {} });

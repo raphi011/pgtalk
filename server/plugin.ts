@@ -39,7 +39,7 @@ export function labPlugin(): Plugin {
             await ready;
             if (msg.type === "run") await lab.run(msg.blockId, msg.session, msg.sql);
             else if (msg.type === "cancel") await lab.cancel(msg.session);
-            else if (msg.type === "restore") await lab.restore(msg.fixture);
+            else if (msg.type === "restore") await lab.restore(msg.fixture, msg.force);
             else if (msg.type === "reset-sessions") await lab.resetSessions();
           } catch (err) {
             broadcast({ type: "fatal", message: String(err) });
