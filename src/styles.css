@@ -150,3 +150,5 @@ button.run { background: #238636; border-color: #2ea043; }
 .plan-cond code { color: var(--accent); }
 .plan-totals { display: flex; gap: 1.2rem; margin-top: 0.6rem; color: var(--dim); font-size: 0.85rem; }
 .plan-totals .estimate-only { color: var(--warn); }
+
+.code text { font-family: var(--mono); }

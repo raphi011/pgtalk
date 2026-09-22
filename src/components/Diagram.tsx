@@ -1,5 +1,14 @@
-import { Children, createContext, isValidElement, useContext, type ReactNode } from "react";
+import {
+  Children,
+  createContext,
+  isValidElement,
+  useContext,
+  useEffect,
+  useState,
+  type ReactNode,
+} from "react";
 import { useAppeared } from "./Step.js";
+import { highlighter } from "../highlight.js";
 
 /** Grid unit in SVG user units; boxes are placed on whole grid cells (A3). */
 const CELL = 100;
@@ -175,6 +184,71 @@ export function Highlight({ target, appearAt = 0 }: { target: string; appearAt?:
   return (
     <g className={`appear ${appeared ? "in" : ""} highlight`}>
       <rect x={r.x - 6} y={r.y - 6} width={r.w + 12} height={r.h + 12} rx={14} />
+    </g>
+  );
+}
+
+interface Token {
+  content: string;
+  color?: string;
+}
+
+/**
+ * Highlighted SQL inside a diagram. The HTML highlighter cannot be reused
+ * here: this has to be SVG text to share the diagram's coordinate space, so
+ * the code is tokenised and each token becomes a coloured tspan.
+ */
+export function Code({
+  x,
+  y,
+  sql,
+  appearAt = 0,
+  align = "middle",
+  size = 26,
+}: {
+  x: number;
+  y: number;
+  sql: string;
+  appearAt?: number;
+  align?: "start" | "middle" | "end";
+  size?: number;
+}) {
+  const appeared = useAppeared(appearAt);
+  const [lines, setLines] = useState<Token[][] | null>(null);
+
+  useEffect(() => {
+    let live = true;
+    highlighter().then((h) => {
+      if (live) setLines(h.codeToTokensBase(sql, { lang: "sql", theme: "github-dark" }));
+    });
+    return () => {
+      live = false;
+    };
+  }, [sql]);
+
+  // Fall back to plain text until the grammar has loaded, so a slide is never
+  // briefly blank.
+  const rendered: Token[][] = lines ?? sql.split("\n").map((line) => [{ content: line }]);
+
+  return (
+    <g className={`appear ${appeared ? "in" : ""} code`}>
+      <text
+        x={x * CELL}
+        y={y * CELL}
+        textAnchor={align}
+        fontSize={size}
+        xmlSpace="preserve"
+      >
+        {rendered.map((line, i) => (
+          <tspan key={i} x={x * CELL} dy={i === 0 ? 0 : size * 1.5}>
+            {line.map((token, j) => (
+              <tspan key={j} fill={token.color}>
+                {token.content}
+              </tspan>
+            ))}
+          </tspan>
+        ))}
+      </text>
     </g>
   );
 }
