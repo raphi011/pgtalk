@@ -2,9 +2,9 @@
 
 A live, presenter-driven talk series explaining how PostgreSQL works, mixing
 prose slides, step-built diagrams, and real SQL run against a local PostgreSQL
-server. It is a sibling of the book in `chapters/`, not a second route through
-it: the book builds a database, this explains the real one and connects the
-internals to decisions a reader makes at work.
+server. It is a sibling of the *Build Your Own PostgreSQL* book, not a second
+route through it: that book builds a database, this explains the real one and
+connects the internals to decisions a listener makes at work.
 
 This document records the design decisions. Read the relevant one before
 changing anything.
@@ -38,10 +38,11 @@ Keys: `->`/`<-` step, `Down`/`Up` slide, `Enter` run the focused block,
 
 ## Stack
 
-**S1. Vite + React + MDX**, one single-page app, in `presentations/`. Its own
-toolchain and lockfile; it does not participate in the Go module. D1's
-standard-library-only rule governs `internal/`, and keeping this folder
-separate is what keeps that claim honest.
+**S1. Vite + React + MDX**, one single-page app. This lived in the book's
+repository at first, as a folder beside the chapters. It moved out: the book is
+a zero-dependency Go module whose whole claim is the standard library, and a
+Node toolchain sitting inside it muddied that. Cross-link the two; do not merge
+them.
 
 Astro was rejected: static generation and partial hydration solve publishing
 problems, and F3 says there is nothing to publish.
