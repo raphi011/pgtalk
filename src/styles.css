@@ -4,6 +4,9 @@
   --dim: #8b949e;
   --line: #30363d;
   --accent: #58a6ff;
+  /* Headings sit apart from the code palette on purpose: accent blue is
+     already inline code, and amber is already a warning. */
+  --heading: #bc8cff;
   --ok: #3fb950;
   --warn: #d29922;
   --bad: #f85149;
@@ -99,7 +102,12 @@ button.run { background: #238636; border-color: #2ea043; }
 .sqlstate { color: var(--dim); }
 
 .slide { max-width: 1100px; margin: 0 auto; }
-.slide h1 { font-size: 2.4rem; margin: 0 0 0.3rem; letter-spacing: -0.02em; }
+.slide h1 {
+  font-size: 2.4rem;
+  margin: 0 0 0.3rem;
+  letter-spacing: -0.02em;
+  color: var(--heading);
+}
 .slide h2 { font-size: 1.3rem; margin: 0 0 1.5rem; font-weight: 400; color: var(--dim); }
 .slide p { max-width: 42em; }
 .deck.empty { color: var(--dim); }

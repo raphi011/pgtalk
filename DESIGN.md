@@ -115,6 +115,13 @@ the previous slide would otherwise make walking to a slide differ from jumping
 to it. Reconnecting costs milliseconds, so this is paid every slide while the
 copy is not.
 
+**E4a. One deck at a time.** Every connected socket shares one Lab, which is
+what makes a second tab show the same database rather than a private copy. The
+consequence is that a second tab mounting — a reload, or a window left open on
+another slide — restores its own fixture and resets the sessions, interrupting
+whatever the first tab was doing. That is correct for one presenter and wrong
+for two, so do not leave a spare tab on the deck during a talk.
+
 **E5. One schema for all five sessions.** `customers`, `orders`, `order_items`,
 with roughly 500k rows in `orders` — enough that a sequential scan and an index
 scan differ visibly on the clock, small enough to restore instantly from a
