@@ -1,0 +1,20 @@
+export const fixture = "orders";
+export const title = "ANALYZE adds the truth";
+export const notes = `Key 1 turns parallelism off again. The SET from the previous slide
+is gone: every slide change drops the session connections, so walking here and
+jumping here give the same database.
+Key 2 runs the plan for real. Now every node carries both numbers: the estimate
+and what happened.
+Point at rows 500000 → 500000: the planner was right here, because counting a
+whole table needs no selectivity guess.
+Buffers: hit means the page was already in shared_buffers, read means it was
+not. That distinction is all of session 2.`;
+
+# `ANALYZE` adds the truth
+
+`EXPLAIN ANALYZE` runs the query and reports both numbers: what the planner
+predicted, and what actually happened.
+
+<Runnable appearAt={1} sql="SET max_parallel_workers_per_gather = 0;" />
+
+<Plan analyze sql="SELECT count(*) FROM orders;" appearAt={2} />

@@ -1,0 +1,28 @@
+export const fixture = "orders";
+export const title = "Reading a plan in thirty seconds";
+export const notes = `The practical take-away. Four questions, in order.
+1. Innermost first — the tree executes bottom-up even though you read it
+   top-down.
+2. Find the widest gap between rows estimated and rows actual. That node is
+   where the plan went wrong, not the slowest one.
+3. Actual time is per loop. Multiply by loops before you believe it.
+4. Buffers read means disk. Buffers hit means memory. A plan with a small time
+   and huge reads is a plan that got lucky on a warm cache.
+Run the example and walk the four questions against it.`;
+
+# Reading a plan in thirty seconds
+
+1. Read **innermost first** — the tree runs bottom-up.
+2. Find the biggest gap between **rows estimated and actual**. That node is
+   where the plan went wrong, not the slowest one.
+3. **Actual time is per loop.** Multiply before believing it.
+4. **`read` means disk, `hit` means memory.**
+
+<Plan
+  analyze
+  appearAt={1}
+  sql={`SELECT c.country, count(*)
+FROM customers c JOIN orders o ON o.customer_id = c.id
+WHERE o.total_cents > 200000
+GROUP BY c.country;`}
+/>

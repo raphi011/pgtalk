@@ -62,6 +62,14 @@ const d = await until((m) => m.blockId === "d");
 check("blocked statement completes on commit", d.type === "result", `${d.durationMs.toFixed(0)} ms`);
 check("s2 returns to idle", (await until((m) => m.type === "state" && m.session === "s2" && m.state === "idle")) != null);
 
+send({ type: "run", blockId: "g", session: "s1", sql: "SET max_parallel_workers_per_gather = 0;" });
+await until((m) => m.blockId === "g");
+send({ type: "reset-sessions" });
+await until((m) => m.type === "state" && m.session === "s1" && m.state === "disconnected");
+send({ type: "run", blockId: "h", session: "s1", sql: "SHOW max_parallel_workers_per_gather;" });
+const h = await until((m) => m.blockId === "h");
+check("a slide change drops session-local SET", h.results?.[0]?.rows?.[0]?.[0] !== "0", JSON.stringify(h.results?.[0]?.rows));
+
 send({ type: "run", blockId: "f", session: "s1", sql: "SELECT status FROM orders WHERE id = 1;" });
 const f = await until((m) => m.blockId === "f");
 check("s1 sees s2's committed write", f.results?.[0]?.rows?.[0]?.[0] === "cancelled", JSON.stringify(f.results?.[0]?.rows));

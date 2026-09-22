@@ -141,3 +141,12 @@ button.run { background: #238636; border-color: #2ea043; }
   background: #0d1117f2; color: var(--fg);
   font-size: 0.9rem; white-space: pre-wrap;
 }
+
+.plan-node { border-left: 2px solid var(--line); padding-left: 0.7rem; margin: 0.35rem 0; }
+.plan-title { color: var(--fg); font-weight: 600; }
+.plan-meta { display: flex; flex-wrap: wrap; gap: 0 1.1rem; color: var(--dim); font-size: 0.85rem; }
+.plan-meta .misestimate { color: var(--warn); font-weight: 600; }
+.plan-cond { color: var(--dim); font-size: 0.85rem; }
+.plan-cond code { color: var(--accent); }
+.plan-totals { display: flex; gap: 1.2rem; margin-top: 0.6rem; color: var(--dim); font-size: 0.85rem; }
+.plan-totals .estimate-only { color: var(--warn); }

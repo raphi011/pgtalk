@@ -1,0 +1,30 @@
+export const title = "The executor pulls";
+export const notes = `A plan is not a program that runs top to bottom. It is a tree of
+iterators, and the top node pulls.
+Walk one row through: Aggregate asks Filter for a row, Filter asks Seq Scan,
+Seq Scan returns one tuple. Repeat 500000 times.
+This is why LIMIT can be nearly free — the top node simply stops pulling — and
+why a sort in the middle of a tree is not, because a sort cannot answer until
+it has seen everything.
+"Actual loops" in a plan is this picture: how many times a subtree was asked to
+start over.`;
+
+# The executor pulls
+
+Every node answers one question: *give me your next row*.
+
+<Diagram cols={12} rows={5}>
+  <Box id="agg"  x={4} y={0} w={3} label="Aggregate" sub="count(*)" appearAt={1} />
+  <Box id="filt" x={4} y={1.8} w={3} label="Filter" sub="status = 'shipped'" appearAt={1} />
+  <Box id="scan" x={4} y={3.6} w={3} label="Seq Scan" sub="orders" appearAt={1} />
+
+  <Arrow from="agg" to="filt" label="next?" appearAt={2} />
+  <Arrow from="filt" to="scan" label="next?" appearAt={3} />
+
+  <Label x={9.6} y={4} text="one row" appearAt={4} />
+  <Label x={9.6} y={2.2} text="one row, or skip" appearAt={5} />
+  <Label x={9.6} y={0.6} text="repeat 500,000 times" appearAt={6} />
+
+  <Highlight target="agg" appearAt={7} />
+  <Label x={0.3} y={0.6} text="stops early on LIMIT" appearAt={7} align="start" />
+</Diagram>

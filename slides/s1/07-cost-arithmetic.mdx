@@ -1,0 +1,27 @@
+export const fixture = "orders";
+export const title = "Cost is arithmetic you can do yourself";
+export const notes = `Run key 1 first: relpages and reltuples, the planner's whole picture
+of this table.
+Then have them predict before key 2. The formula is on the slide.
+3677 x 1.0 + 500000 x 0.01 = 8677.00. It will match to the penny.
+Then the Aggregate on top adds 500000 x 0.0025 = 1250, giving 9927.00.
+The payoff: cost units are not milliseconds. They are multiples of "read one
+page sequentially". Comparing costs between two plans is meaningful; comparing
+a cost to a clock is not.`;
+
+# Cost is arithmetic you can do yourself
+
+<Runnable
+  appearAt={1}
+  sql={`SELECT relname, relpages, reltuples::bigint
+FROM pg_class WHERE relname = 'orders';`}
+/>
+
+A sequential scan costs `relpages × seq_page_cost + reltuples × cpu_tuple_cost`,
+with `seq_page_cost = 1.0` and `cpu_tuple_cost = 0.01`.
+
+<Runnable appearAt={2} sql="SET max_parallel_workers_per_gather = 0;" />
+
+<Plan sql="SELECT count(*) FROM orders;" appearAt={3} />
+
+**Predict.** Work out the scan's total cost before running it.

@@ -125,11 +125,17 @@ export function Arrow({
   const [x1, y1] = anchor(a, b);
   const [x2, y2] = anchor(b, a);
 
+  // Offset the label off the line rather than onto it: a vertical arrow would
+  // otherwise strike straight through its own text.
+  const vertical = Math.abs(y2 - y1) > Math.abs(x2 - x1);
+  const lx = (x1 + x2) / 2 + (vertical ? 14 : 0);
+  const ly = (y1 + y2) / 2 + (vertical ? 5 : -10);
+
   return (
     <g className={`appear ${appeared ? "in" : ""} arrow`}>
       <line x1={x1} y1={y1} x2={x2} y2={y2} markerEnd="url(#arrowhead)" />
       {label ? (
-        <text x={(x1 + x2) / 2} y={(y1 + y2) / 2 - 8} textAnchor="middle">
+        <text x={lx} y={ly} textAnchor={vertical ? "start" : "middle"}>
           {label}
         </text>
       ) : null}

@@ -34,6 +34,7 @@ export interface QueryError {
 export type ClientMessage =
   | { type: "run"; blockId: string; session: SessionName; sql: string }
   | { type: "cancel"; session: SessionName }
+  | { type: "reset-sessions" }
   | { type: "restore"; fixture: string };
 
 export type ServerMessage =

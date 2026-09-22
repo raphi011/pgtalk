@@ -96,9 +96,16 @@ the previous slide used a different one, so any slide can be entered cold —
 rehearsing slide 12 alone, or backing up when someone asks a question.
 
 Restore is `DROP DATABASE demo; CREATE DATABASE demo TEMPLATE demo_fix_<name>`,
-a file copy rather than a re-run of the seed SQL: well under a second against
-tens of seconds, and every one of those seconds would be felt on stage. Open
-sessions must be disconnected first, since a connected client blocks the drop.
+a file copy rather than a re-run of the seed SQL: about three quarters of a
+second against tens, and every one of those seconds would be felt on stage.
+Open sessions are disconnected first, since a connected client blocks the drop.
+
+The template is only copied when the fixture changes, but the session
+connections are dropped on *every* slide change. Session-local state is the
+other half of "entering a slide cold": a `SET` or an open transaction left by
+the previous slide would otherwise make walking to a slide differ from jumping
+to it. Reconnecting costs milliseconds, so this is paid every slide while the
+copy is not.
 
 **E5. One schema for all five sessions.** `customers`, `orders`, `order_items`,
 with roughly 500k rows in `orders` — enough that a sequential scan and an index
@@ -165,10 +172,13 @@ sessions. Text plans are unreadable past about six lines on a projector.
 
 ## Build order
 
-1. `justfile`, schema, seed.
-2. The WebSocket session layer: two panes, a real lock demo, `blocked` versus
-   `failed`, fixture restore. This proves E1, E2 and E4 together and is the
-   riskiest part.
-3. Step machinery and the diagram DSL.
-4. The `EXPLAIN` tree.
-5. Session 1 content.
+1. ~~`justfile`, schema, seed.~~
+2. ~~The WebSocket session layer.~~ `just smoke` proves E1, E2 and E4.
+3. ~~Step machinery and the diagram DSL.~~
+4. ~~The `EXPLAIN` tree.~~
+5. ~~Session 1 content.~~ Twelve slides in `slides/s1/`.
+6. Sessions 2 to 5. Each will need fixtures beyond `orders`: a bloated table
+   for session 2, an indexed copy for session 3.
+
+`just shots` renders every slide through the real keyboard path and fails on
+any console error, which is the closest thing to rehearsing without a room.

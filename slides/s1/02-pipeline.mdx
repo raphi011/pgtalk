@@ -1,22 +1,24 @@
 export const title = "The five stages";
-export const notes = `Name each stage as it lands. The point of the diagram is that the
-stages are separate programs with separate failure modes — a syntax error and a
-missing column come from different places, and say so differently.`;
+export const notes = `Name each stage as it lands.
+The point: these are separate programs with separate failure modes. A syntax
+error and a missing column come from different stages and say so differently.
+Land on the planner — it is the only stage that makes a decision it could
+regret, and the rest of the talk is about that decision.`;
 
 # The five stages
 
 <Diagram cols={12} rows={4}>
-  <Box id="lex"   x={0} y={1} w={2} label="Parser" sub="text → AST" appearAt={1} />
-  <Box id="anl"   x={2.5} y={1} w={2} label="Analyzer" sub="AST → query" appearAt={2} />
-  <Box id="rew"   x={5} y={1} w={2} label="Rewriter" sub="views, rules" appearAt={3} />
-  <Box id="pln"   x={7.5} y={1} w={2} label="Planner" sub="query → plan" appearAt={4} tone="accent" />
-  <Box id="exe"   x={10} y={1} w={2} label="Executor" sub="plan → rows" appearAt={5} />
+  <Box id="par" x={0} y={1} w={2} label="Parser" sub="text → AST" appearAt={1} />
+  <Box id="anl" x={2.5} y={1} w={2} label="Analyzer" sub="AST → query" appearAt={2} />
+  <Box id="rew" x={5} y={1} w={2} label="Rewriter" sub="views, rules" appearAt={3} />
+  <Box id="pln" x={7.5} y={1} w={2} label="Planner" sub="query → plan" appearAt={4} tone="accent" />
+  <Box id="exe" x={10} y={1} w={2} label="Executor" sub="plan → rows" appearAt={5} />
 
-  <Arrow from="lex" to="anl" appearAt={2} />
+  <Arrow from="par" to="anl" appearAt={2} />
   <Arrow from="anl" to="rew" appearAt={3} />
   <Arrow from="rew" to="pln" appearAt={4} />
   <Arrow from="pln" to="exe" appearAt={5} />
 
   <Highlight target="pln" appearAt={6} />
-  <Label x={8.5} y={3.2} text="the only stage that guesses" appearAt={6} />
+  <Label x={8.5} y={3.3} text="the only stage that guesses" appearAt={6} />
 </Diagram>

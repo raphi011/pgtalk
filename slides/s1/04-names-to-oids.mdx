@@ -1,0 +1,21 @@
+export const fixture = "orders";
+export const title = "Names become numbers";
+export const notes = `The analyzer's job: every name in your query becomes a number.
+'customers' becomes an OID, each column becomes an attribute number, each
+operator becomes a function.
+Point at attnum: dropped columns leave holes, which is why attnum is not a
+position you can count on.
+This table is why the hint on the last slide was possible.`;
+
+# Names become numbers
+
+The analyzer resolves every name against the catalog. After it runs, nothing in
+the query is a string any more.
+
+<Runnable
+  appearAt={1}
+  sql={`SELECT attname, atttypid::regtype AS type, attnum
+FROM pg_attribute
+WHERE attrelid = 'customers'::regclass AND attnum > 0
+ORDER BY attnum;`}
+/>

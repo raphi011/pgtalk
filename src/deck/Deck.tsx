@@ -51,8 +51,12 @@ export function Deck() {
     if (slide?.fixture && slide.fixture !== current.current) {
       current.current = slide.fixture;
       lab.restore(slide.fixture);
+    } else {
+      // Same fixture, new slide: the data is already right, but a SET or an
+      // open transaction from the previous slide is not.
+      lab.resetSessions();
     }
-  }, [slide?.fixture]);
+  }, [path]);
 
   const blocks = useRef<BlockHandle[]>([]);
   const registry = useMemo(

@@ -37,3 +37,7 @@ sizes:
 # Prove the session layer against a running `just dev` (E1, E2, E4).
 smoke:
     node test/lab-smoke.mjs
+
+# Screenshot every slide of a session, failing on any console error.
+shots session="s1":
+    node test/shoot.mjs $(seq 0 11 | sed 's|^|{{session}}/|;s|$|/9|' | tr '\n' ' ')

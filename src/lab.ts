@@ -102,6 +102,10 @@ export const lab = {
   restore(fixture: string) {
     send({ type: "restore", fixture });
   },
+  resetSessions() {
+    set({ blocks: {}, pending: {} });
+    send({ type: "reset-sessions" });
+  },
 };
 
 export function useLab(): LabState {

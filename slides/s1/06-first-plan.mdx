@@ -1,0 +1,17 @@
+export const fixture = "orders";
+export const title = "Your first plan";
+export const notes = `Run it (key 1).
+Read the tree aloud: one node, an index scan, an index condition.
+cost=0.42..8.44 — two numbers, not one. The first is the cost to get the FIRST
+row, the second to get them ALL. That distinction is what makes LIMIT plans
+look strange, and we will use it in session 3.
+rows=1 is a guess. width=28 is a guess. There is no timing here at all, because
+nothing has run.`;
+
+# Your first plan
+
+`EXPLAIN` asks the planner what it would do. Nothing executes.
+
+<Plan sql="SELECT * FROM orders WHERE id = 42;" appearAt={1} />
+
+**Predict.** Two numbers separated by `..`. What is the difference between them?

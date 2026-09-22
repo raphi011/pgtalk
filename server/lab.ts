@@ -175,6 +175,23 @@ export class Lab {
     }
   }
 
+  /**
+   * Drop every session connection without touching the data. Session-local
+   * state — SET, an open transaction — must not survive a slide change, or
+   * entering a slide by walking to it would differ from entering it cold
+   * (E4). Restoring the template for this would cost the best part of a
+   * second per slide; reconnecting costs milliseconds.
+   */
+  async resetSessions() {
+    for (const s of this.sessions.values()) {
+      await s.client?.end().catch(() => {});
+      s.client = null;
+      s.pid = 0;
+      s.inFlight = undefined;
+      this.setState(s, "disconnected");
+    }
+  }
+
   /** Cancel from the admin connection; the session's own is busy. */
   async cancel(name: SessionName) {
     const s = this.sessions.get(name);
@@ -192,13 +209,7 @@ export class Lab {
   async restore(fixture: string, force = false) {
     if (!force && this.fixture === fixture) return;
     const started = performance.now();
-    for (const s of this.sessions.values()) {
-      await s.client?.end().catch(() => {});
-      s.client = null;
-      s.pid = 0;
-      s.inFlight = undefined;
-      this.setState(s, "disconnected");
-    }
+    await this.resetSessions();
     await this.withAdmin(async (admin) => {
       await admin.query(`DROP DATABASE IF EXISTS ${DEMO_DB} WITH (FORCE)`);
       await admin.query(`CREATE DATABASE ${DEMO_DB} TEMPLATE ${fixtureDb(fixture)}`);
