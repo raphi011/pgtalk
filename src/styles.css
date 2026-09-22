@@ -1,0 +1,99 @@
+:root {
+  --bg: #0d1117;
+  --fg: #e6edf3;
+  --dim: #8b949e;
+  --line: #30363d;
+  --accent: #58a6ff;
+  --ok: #3fb950;
+  --warn: #d29922;
+  --bad: #f85149;
+  --mono: ui-monospace, "SF Mono", Menlo, monospace;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font: 20px/1.5 system-ui, sans-serif;
+}
+
+.deck { padding: 3vh 4vw; }
+
+.sessions { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+
+.runnable {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+  margin: 1.5rem 0;
+  transition: border-color 120ms;
+}
+.runnable.state-blocked { border-color: var(--warn); }
+.runnable.state-failed { border-color: var(--bad); }
+
+.runnable-head {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.5rem 0.8rem;
+  background: #161b22;
+  border-bottom: 1px solid var(--line);
+  font-size: 0.8rem;
+}
+.spacer { flex: 1; }
+.session-name { font-family: var(--mono); color: var(--accent); font-weight: 600; }
+
+.badge {
+  font-family: var(--mono);
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  color: var(--dim);
+}
+.badge-in-transaction { color: var(--accent); border-color: var(--accent); }
+.badge-running { color: var(--fg); }
+.badge-blocked {
+  color: var(--warn);
+  border-color: var(--warn);
+  animation: pulse 1s ease-in-out infinite;
+}
+.badge-failed { color: var(--bad); border-color: var(--bad); }
+
+@keyframes pulse { 50% { opacity: 0.35; } }
+
+button {
+  font: inherit;
+  font-size: 0.8rem;
+  background: #21262d;
+  color: var(--fg);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 0.15rem 0.7rem;
+  cursor: pointer;
+}
+button.run { background: #238636; border-color: #2ea043; }
+
+.sql pre { margin: 0; padding: 0.8rem; font-family: var(--mono); font-size: 0.95rem; }
+.sql-edit {
+  width: 100%;
+  border: none;
+  padding: 0.8rem;
+  background: #0d1117;
+  color: var(--fg);
+  font-family: var(--mono);
+  font-size: 0.95rem;
+  resize: vertical;
+}
+
+.panel { border-top: 1px solid var(--line); padding: 0.6rem 0.8rem; font-family: var(--mono); font-size: 0.9rem; }
+.panel table { border-collapse: collapse; margin-bottom: 0.4rem; }
+.panel th, .panel td { padding: 0.15rem 0.9rem 0.15rem 0; text-align: left; white-space: pre; }
+.panel th { color: var(--dim); font-weight: 600; border-bottom: 1px solid var(--line); }
+.panel td.null { color: var(--dim); font-style: italic; }
+.panel .tag, .panel .timing { color: var(--dim); font-size: 0.8rem; }
+.panel .notice { color: var(--warn); }
+.panel.error .error-line { color: var(--bad); white-space: pre-wrap; }
+.panel.error .error-aux { color: var(--dim); white-space: pre-wrap; }
+.sqlstate { color: var(--dim); }
