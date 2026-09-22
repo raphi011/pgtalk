@@ -59,7 +59,7 @@ nothing on stage moves underneath them.
 
 Keys: `->`/`<-` step, `Down`/`Up` slide, `Enter` run the focused block,
 `1`-`9` run a block by position, `r` reset the slide, `e` edit SQL, `n` notes,
-`g` jump to a slide.
+`` ` `` REPL, `g` jump to a slide.
 
 The focused block is the first on the slide that has not run yet, falling back
 to the last once they all have. On a `<Sessions>` slide that makes `Enter`
@@ -73,6 +73,21 @@ is and never what fits on it: a slide that fits at rehearsal fits on stage.
 the presenter cannot scroll mid-sentence. Anything that measures the screen
 gets zoomed pixels and has to divide the zoom back out before writing a size
 into a style; the stage provides it for that.
+
+**F4b. A REPL for questions from the floor.** `` ` `` opens a psql-like prompt
+over the slide, the same way the notes open: the deck ignores its own keys
+while it is up, and `Esc` closes it. A statement ending in `;` runs on `Enter`,
+anything else continues on the next line; `Cmd+Enter` runs regardless, `Up`
+and `Down` recall earlier input, `Ctrl+C` cancels.
+
+It runs on a session of its own, `repl`, rather than on `s1` or `s2`: typing
+into a slide's session would change what the slide's next block sees. Being an
+ordinary session, its answers render through the same panel as a block's, and
+a slide's session waiting on a lock it holds reads `blocked by repl`. Like
+every session it is reset on a slide change (E4), so a transaction left open
+in it cannot hold a lock across into the next demo. The scrollback is kept
+apart from the slide's block outputs and survives navigation; only the
+connection behind it does not.
 
 ## Stack
 

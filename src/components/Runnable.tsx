@@ -16,7 +16,7 @@ import type { SessionState } from "../../server/protocol.js";
 /** Set by <Sessions> so a nested block knows it is one of a pair. */
 const Paired = createContext(false);
 
-const STATE_LABEL: Record<SessionState, string> = {
+export const STATE_LABEL: Record<SessionState, string> = {
   disconnected: "disconnected",
   idle: "idle",
   "in-transaction": "in transaction",
@@ -30,7 +30,7 @@ const STATE_LABEL: Record<SessionState, string> = {
  * two-second UPDATE otherwise looks exactly like one that never started, and
  * a blocked statement's wait is the number session 5 is about.
  */
-function Elapsed({ since }: { since: number }) {
+export function Elapsed({ since }: { since: number }) {
   const [now, setNow] = useState(performance.now());
   useEffect(() => {
     const t = setInterval(() => setNow(performance.now()), 100);

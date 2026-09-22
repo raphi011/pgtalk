@@ -2,7 +2,8 @@
 // the step machinery can be checked without a human at the keyboard.
 //   node test/shoot.mjs s1/1/0 s1/2/2:Enter,Enter s2/8/0:ArrowRight,Enter,wait ...
 // A position may carry keys to press after it loads, so the keyboard path is
-// exercised rather than the URL alone.
+// exercised rather than the URL alone. `type=<text>` types text instead of
+// pressing a key, for the REPL; it cannot contain a comma or a colon.
 import { launch } from "puppeteer-core";
 import { mkdir } from "node:fs/promises";
 import { homedir } from "node:os";
@@ -39,7 +40,8 @@ for (const spec of positions) {
       await page.evaluate(() => new Promise((r) => setTimeout(r, 3000)));
       continue;
     }
-    await page.keyboard.press(key);
+    if (key.startsWith("type=")) await page.keyboard.type(key.slice(5));
+    else await page.keyboard.press(key);
     await page.evaluate(() => new Promise((r) => setTimeout(r, 600)));
   }
   await page.evaluate(() => new Promise((r) => setTimeout(r, 400)));

@@ -18,6 +18,21 @@ export interface BlockOutput {
   at: number;
 }
 
+/**
+ * A statement typed into the REPL. Kept apart from `blocks`, which every slide
+ * change clears: the scrollback outlives navigation even though the REPL's
+ * connection does not (F4b).
+ */
+export interface ReplEntry {
+  id: string;
+  sql: string;
+  startedAt: number;
+  output?: BlockOutput;
+}
+
+/** The session the REPL runs on, a backend of its own (F4b). */
+export const REPL_SESSION = "repl";
+
 interface LabState {
   connected: boolean;
   fatal?: string;
@@ -28,9 +43,11 @@ interface LabState {
   blocks: Record<string, BlockOutput>;
   /** Blocks awaiting an answer, and when they were sent. */
   pending: Record<string, { session: SessionName; startedAt: number }>;
+  repl: ReplEntry[];
 }
 
-let state: LabState = { connected: false, sessions: {}, blocks: {}, pending: {} };
+let state: LabState = { connected: false, sessions: {}, blocks: {}, pending: {}, repl: [] };
+let replCount = 0;
 const listeners = new Set<() => void>();
 let socket: WebSocket | null = null;
 
@@ -69,21 +86,20 @@ function apply(msg: ServerMessage) {
       break;
     case "result":
     case "error": {
+      const output: BlockOutput = {
+        session: msg.session,
+        durationMs: msg.durationMs,
+        at: performance.now(),
+        ...(msg.type === "result"
+          ? { results: msg.results, notices: msg.notices }
+          : { error: msg.error }),
+      };
+      if (state.repl.some((e) => e.id === msg.blockId)) {
+        set({ repl: state.repl.map((e) => (e.id === msg.blockId ? { ...e, output } : e)) });
+        break;
+      }
       const { [msg.blockId]: _, ...pending } = state.pending;
-      set({
-        pending,
-        blocks: {
-          ...state.blocks,
-          [msg.blockId]: {
-            session: msg.session,
-            durationMs: msg.durationMs,
-            at: performance.now(),
-            ...(msg.type === "result"
-              ? { results: msg.results, notices: msg.notices }
-              : { error: msg.error }),
-          },
-        },
-      });
+      set({ pending, blocks: { ...state.blocks, [msg.blockId]: output } });
       break;
     }
     case "restored":
@@ -110,6 +126,11 @@ export const lab = {
   run(blockId: string, session: SessionName, sql: string) {
     set({ pending: { ...state.pending, [blockId]: { session, startedAt: performance.now() } } });
     send({ type: "run", blockId, session, sql });
+  },
+  replRun(sql: string) {
+    const id = `repl-${++replCount}`;
+    set({ repl: [...state.repl, { id, sql, startedAt: performance.now() }] });
+    send({ type: "run", blockId: id, session: REPL_SESSION, sql });
   },
   cancel(session: SessionName) {
     send({ type: "cancel", session });

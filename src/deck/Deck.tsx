@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { lab, useLab } from "../lab.js";
 import { StepContext } from "../components/Step.js";
+import { Repl } from "../components/Repl.js";
 import { RegistryContext, type BlockHandle } from "./registry.js";
 import { useHashRoute, writeHash } from "./route.js";
 import { ZoomContext } from "./zoom.js";
@@ -38,6 +39,7 @@ export function Deck() {
   const [route, setRoute] = useHashRoute(sessionIds[0] ?? "s1");
   const [steps, setSteps] = useState({ path: "", max: 0 });
   const [showNotes, setShowNotes] = useState(false);
+  const [showRepl, setShowRepl] = useState(false);
   const { connected, fatal } = useLab();
   const [zoom, stageAreaRef] = useStageZoom();
 
@@ -122,6 +124,15 @@ export function Deck() {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      if (showRepl) {
+        // Like the notes, the REPL takes the keyboard while it is open. Its
+        // own keys are handled on its input; only closing it is the deck's.
+        if (e.key === "Escape" || (e.key === "`" && !(e.target instanceof HTMLTextAreaElement))) {
+          setShowRepl(false);
+          e.preventDefault();
+        }
+        return;
+      }
       if (e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLInputElement) {
         if (e.key !== "Escape") return;
         (e.target as HTMLElement).blur();
@@ -165,6 +176,9 @@ export function Deck() {
         case "n":
           setShowNotes(true);
           break;
+        case "`":
+          setShowRepl(true);
+          break;
         case "r":
           // Force: the fixture is by definition already loaded, and the point
           // of the key is to undo whatever the last few minutes did to it.
@@ -184,7 +198,7 @@ export function Deck() {
     };
     addEventListener("keydown", onKey);
     return () => removeEventListener("keydown", onKey);
-  }, [route, step, maxStep, go, deck.length, slide?.fixture, showNotes]);
+  }, [route, step, maxStep, go, deck.length, slide?.fixture, showNotes, showRepl]);
 
   // The overlay scrolls with the keyboard only while it holds focus, and it
   // opens at the top rather than where it was last left.
@@ -245,6 +259,8 @@ export function Deck() {
               </div>
             </aside>
           ) : null}
+
+          {showRepl ? <Repl /> : null}
         </div>
       </StepContext.Provider>
     </RegistryContext.Provider>

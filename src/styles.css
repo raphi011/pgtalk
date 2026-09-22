@@ -323,3 +323,25 @@ button.run { background: #238636; border-color: #2ea043; }
 .plan-bar { width: 16rem; height: 4px; margin: 0.15rem 0 0.2rem; background: var(--line); border-radius: 2px; }
 .plan-bar span { display: block; height: 100%; background: var(--accent); border-radius: 2px; transition: width 400ms ease-out; }
 .plan-node.off > .plan-bar span { background: var(--warn); }
+
+/* The REPL opens over the slide like the notes (F4b): scrollback above, the
+   prompt pinned under it. */
+.repl {
+  position: fixed; inset: 3vh 4vw 3vh 4vw;
+  display: flex; flex-direction: column;
+  border: 1px solid var(--accent); border-radius: 10px;
+  background: var(--bg); color: var(--fg);
+  overflow: hidden;
+}
+.repl-scroll { flex: 1; min-height: 0; overflow-y: auto; padding: 0 1.4rem; }
+.repl-entry { border-bottom: 1px solid var(--line); padding: 0.4rem 0; }
+.repl-entry .panel { border-top: none; padding: 0.2rem 0 0.4rem; }
+.repl-input {
+  flex: none;
+  max-height: 40%;
+  border: none; border-top: 1px solid var(--line);
+  padding: 0.8rem 1.4rem;
+  background: #161b22; color: var(--fg);
+  font-family: var(--mono); font-size: 0.95rem;
+  resize: none; outline: none;
+}
