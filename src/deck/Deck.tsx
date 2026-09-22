@@ -16,15 +16,22 @@ const ALL_STEPS = 9999;
  */
 export const STAGE = { width: 1600, height: 900 };
 
+/**
+ * Fits the stage to the element it is centred in, which is the window less the
+ * status bar, so the bar can sit at the bottom of the window at any aspect ratio.
+ */
 function useStageZoom() {
-  const fit = () => Math.min(innerWidth / STAGE.width, innerHeight / STAGE.height);
-  const [zoom, setZoom] = useState(fit);
-  useEffect(() => {
-    const onResize = () => setZoom(fit());
-    addEventListener("resize", onResize);
-    return () => removeEventListener("resize", onResize);
+  const [zoom, setZoom] = useState(1);
+  const ref = useCallback((area: HTMLElement | null) => {
+    if (!area) return;
+    const observer = new ResizeObserver(([entry]) => {
+      const { width, height } = entry.contentRect;
+      setZoom(Math.min(width / STAGE.width, height / STAGE.height));
+    });
+    observer.observe(area);
+    return () => observer.disconnect();
   }, []);
-  return zoom;
+  return [zoom, ref] as const;
 }
 
 export function Deck() {
@@ -32,7 +39,7 @@ export function Deck() {
   const [steps, setSteps] = useState({ path: "", max: 0 });
   const [showNotes, setShowNotes] = useState(false);
   const { connected, fatal } = useLab();
-  const zoom = useStageZoom();
+  const [zoom, stageAreaRef] = useStageZoom();
 
   const deck = slidesOf(route.session);
   const index = Math.min(route.slide, Math.max(0, deck.length - 1));
@@ -199,30 +206,32 @@ export function Deck() {
     <RegistryContext.Provider value={registry}>
       <StepContext.Provider value={{ step, register }}>
         <div className="deck">
-          <div className="stage" style={{ zoom }}>
-            <div className="stage-body">
-              <article className="slide">
-                <ZoomContext.Provider value={zoom}>
-                  <Body />
-                </ZoomContext.Provider>
-              </article>
+          <div className="stage-area" ref={stageAreaRef}>
+            <div className="stage" style={{ zoom }}>
+              <div className="stage-body">
+                <article className="slide">
+                  <ZoomContext.Provider value={zoom}>
+                    <Body />
+                  </ZoomContext.Provider>
+                </article>
+              </div>
             </div>
-
-            <footer className="chrome">
-              <span className={connected ? "dot ok" : "dot bad"} />
-              <span>{route.session}</span>
-              <span>
-                {index + 1} / {deck.length}
-              </span>
-              {maxStep > 0 ? (
-                <span>
-                  step {step} / {maxStep}
-                </span>
-              ) : null}
-              {slide.fixture ? <span className="fixture">{slide.fixture}</span> : null}
-              {fatal ? <span className="fatal">{fatal}</span> : null}
-            </footer>
           </div>
+
+          <footer className="chrome">
+            <span className={connected ? "dot ok" : "dot bad"} />
+            <span>{route.session}</span>
+            <span>
+              {index + 1} / {deck.length}
+            </span>
+            {maxStep > 0 ? (
+              <span>
+                step {step} / {maxStep}
+              </span>
+            ) : null}
+            {slide.fixture ? <span className="fixture">{slide.fixture}</span> : null}
+            {fatal ? <span className="fatal">{fatal}</span> : null}
+          </footer>
 
           {showNotes && Notes ? (
             <aside className="notes" tabIndex={-1} ref={notesRef}>

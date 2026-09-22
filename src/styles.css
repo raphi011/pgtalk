@@ -22,10 +22,16 @@ body {
   font: 20px/1.5 system-ui, sans-serif;
 }
 
-/* The stage is a fixed 1600×900 canvas zoomed to the window (F4a), centred
-   with the page background filling whatever the aspect ratio leaves over. */
+/* The stage is a fixed 1600×900 canvas zoomed to the window above the status
+   bar (F4a), centred with the page background filling whatever the aspect
+   ratio leaves over. The bar stays pinned to the bottom of the window. */
 .deck {
   position: fixed; inset: 0;
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+.stage-area {
+  flex: 1; min-height: 0;
   display: flex; align-items: center; justify-content: center;
   overflow: hidden;
 }
@@ -194,6 +200,7 @@ button.run { background: #238636; border-color: #2ea043; }
 .page-frame { fill: none; stroke: var(--line); stroke-width: 2; stroke-dasharray: 6 5; }
 
 .chrome {
+  flex: none;
   display: flex; gap: 1.2rem; align-items: center;
   padding: 0.4rem 1.2rem;
   background: #0d1117ee;
@@ -209,7 +216,7 @@ button.run { background: #238636; border-color: #2ea043; }
   position: fixed; inset: 3vh 4vw 3vh 4vw;
   display: flex; flex-direction: column;
   border: 1px solid var(--accent); border-radius: 10px;
-  background: #0d1117f7; color: var(--fg);
+  background: var(--bg); color: var(--fg);
   overflow-y: auto; outline: none;
 }
 .notes-head {
@@ -219,7 +226,7 @@ button.run { background: #238636; border-color: #2ea043; }
   background: #161b22; border-bottom: 1px solid var(--line);
   color: var(--dim); font: 400 0.75rem var(--mono);
 }
-.notes-body { padding: 0.6rem 2.2rem 2.4rem; font-size: 0.95rem; max-width: 60em; }
+.notes-body { padding: 0.6rem 2.2rem 2.4rem; font-size: 0.95rem; width: 100%; max-width: 60em; margin: 0 auto; }
 .notes-body h2 {
   font-size: 1.15rem; margin: 1.6rem 0 0.5rem; color: var(--heading);
 }
