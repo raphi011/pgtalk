@@ -1,7 +1,9 @@
 export const title = "The five stages";
-export const notes = `Name each stage as it lands.
+export const notes = `Name each stage as it lands; the caption under the boxes is the
+one sentence for it.
 The point: these are separate programs with separate failure modes. A syntax
-error and a missing column come from different stages and say so differently.
+error and a missing column come from different stages and say so differently,
+which the next slide shows.
 Land on the planner — it is the only stage that makes a decision it could
 regret, and the rest of the talk is about that decision.`;
 
@@ -19,6 +21,12 @@ regret, and the rest of the talk is about that decision.`;
   <Arrow from="rew" to="pln" appearAt={4} />
   <Arrow from="pln" to="exe" appearAt={5} />
 
+  <Label x={6} y={3} appearAt={1} hideAt={2} text="grammar: is this a sentence at all?" />
+  <Label x={6} y={3} appearAt={2} hideAt={3} text="meaning: do these tables and columns exist?" />
+  <Label x={6} y={3} appearAt={3} hideAt={4} text="expansion: views become their definitions" />
+  <Label x={6} y={3} appearAt={4} hideAt={5} text="choice: which equivalent plan is cheapest?" />
+  <Label x={6} y={3} appearAt={5} hideAt={6} text="work: pull rows up through the plan tree" />
+
   <Highlight target="pln" appearAt={6} />
-  <Label x={8.5} y={3.3} text="the only stage that guesses" appearAt={6} />
+  <Label x={6} y={3} appearAt={6} text="the only stage that guesses" />
 </Diagram>

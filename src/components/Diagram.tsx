@@ -80,12 +80,13 @@ interface BoxProps {
   sub?: string;
   tone?: "plain" | "accent" | "warn";
   appearAt?: number;
+  hideAt?: number;
 }
 
 export function Box(props: BoxProps) {
-  const { label, sub, tone = "plain", appearAt = 0 } = props;
+  const { label, sub, tone = "plain", appearAt = 0, hideAt } = props;
   const r = rectOf(props);
-  const appeared = useAppeared(appearAt);
+  const appeared = useAppeared(appearAt, hideAt);
 
   return (
     <g className={`appear ${appeared ? "in" : ""} box tone-${tone}`}>
@@ -119,14 +120,16 @@ export function Arrow({
   to,
   label,
   appearAt = 0,
+  hideAt,
 }: {
   from: string;
   to: string;
   label?: string;
   appearAt?: number;
+  hideAt?: number;
 }) {
   const geometry = useContext(Geometry);
-  const appeared = useAppeared(appearAt);
+  const appeared = useAppeared(appearAt, hideAt);
   const a = geometry.get(from);
   const b = geometry.get(to);
   if (!a || !b) return null;
@@ -157,15 +160,17 @@ export function Label({
   y,
   text,
   appearAt = 0,
+  hideAt,
   align = "middle",
 }: {
   x: number;
   y: number;
   text: string;
   appearAt?: number;
+  hideAt?: number;
   align?: "start" | "middle" | "end";
 }) {
-  const appeared = useAppeared(appearAt);
+  const appeared = useAppeared(appearAt, hideAt);
   return (
     <g className={`appear ${appeared ? "in" : ""} label`}>
       <text x={x * CELL} y={y * CELL} textAnchor={align}>
@@ -176,9 +181,17 @@ export function Label({
 }
 
 /** Outline a box to draw the eye to it. */
-export function Highlight({ target, appearAt = 0 }: { target: string; appearAt?: number }) {
+export function Highlight({
+  target,
+  appearAt = 0,
+  hideAt,
+}: {
+  target: string;
+  appearAt?: number;
+  hideAt?: number;
+}) {
   const geometry = useContext(Geometry);
-  const appeared = useAppeared(appearAt);
+  const appeared = useAppeared(appearAt, hideAt);
   const r = geometry.get(target);
   if (!r) return null;
   return (
@@ -203,6 +216,7 @@ export function Code({
   y,
   sql,
   appearAt = 0,
+  hideAt,
   align = "middle",
   size = 26,
 }: {
@@ -210,10 +224,11 @@ export function Code({
   y: number;
   sql: string;
   appearAt?: number;
+  hideAt?: number;
   align?: "start" | "middle" | "end";
   size?: number;
 }) {
-  const appeared = useAppeared(appearAt);
+  const appeared = useAppeared(appearAt, hideAt);
   const [lines, setLines] = useState<Token[][] | null>(null);
 
   useEffect(() => {

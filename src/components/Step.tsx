@@ -14,20 +14,34 @@ export function useStep() {
 }
 
 /**
- * True once the presenter has reached `appearAt`. Registering here rather than
- * in the deck is what lets a slide's step count come from its own content.
+ * True once the presenter has reached `appearAt`, and until `hideAt` if one is
+ * given — which is how a caption line can be replaced by the next one rather
+ * than stacking. Registering here rather than in the deck is what lets a
+ * slide's step count come from its own content; a hide step is registered too,
+ * so the step that removes the last element is still reachable.
  */
-export function useAppeared(appearAt = 0) {
+export function useAppeared(appearAt = 0, hideAt?: number) {
   const { step, register } = useStep();
-  useEffect(() => register(appearAt), [appearAt, register]);
-  return step >= appearAt;
+  useEffect(() => {
+    register(appearAt);
+    if (hideAt !== undefined) register(hideAt);
+  }, [appearAt, hideAt, register]);
+  return step >= appearAt && (hideAt === undefined || step < hideAt);
 }
 
 /**
  * The raw escape hatch (A3): anything inside shares the step machinery without
  * going through the DSL.
  */
-export function Step({ n = 0, children }: { n?: number; children: ReactNode }) {
-  const appeared = useAppeared(n);
+export function Step({
+  n = 0,
+  hideAt,
+  children,
+}: {
+  n?: number;
+  hideAt?: number;
+  children: ReactNode;
+}) {
+  const appeared = useAppeared(n, hideAt);
   return <g className={appeared ? "appear in" : "appear"}>{children}</g>;
 }

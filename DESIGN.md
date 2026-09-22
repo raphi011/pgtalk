@@ -151,8 +151,10 @@ from real output is more work, more fragile live, and loses the property that
 matters most — when a query fails, the diagram still tells the story.
 
 **A3. A small step DSL, with an escape hatch.** Four primitives — `<Box>`,
-`<Arrow>`, `<Label>`, `<Highlight>` — each taking `appearAt={n}`, placed on an
-explicit coarse grid. No auto-layout: it reads as a time-saver and then fights
+`<Arrow>`, `<Label>`, `<Highlight>` — plus `<Code>` for highlighted SQL, each
+taking `appearAt={n}` and an optional `hideAt={n}`, placed on an explicit
+coarse grid. `hideAt` is what lets one caption line replace the previous one
+instead of five of them stacking up under a diagram. No auto-layout: it reads as a time-saver and then fights
 every diagram that needs a box moved slightly for an arrow to read.
 
 `<Step n={3}>` stays public as a primitive, so a diagram the DSL cannot express
