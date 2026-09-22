@@ -1,8 +1,9 @@
 export const title = "What we left out";
 export const notes = `Name each one and which session picks it up.
-Close on the honest version: today's plans were all sequential scans and one
-primary-key lookup. Every interesting decision the planner makes needs an
-index to choose between, and we have not made one yet.
+Close on the honest version: today's plans were sequential scans and one
+primary-key lookup, so the planner never actually had a decision to make.
+Every interesting choice it makes needs an index to weigh against a scan, and
+we have not created one yet.
 Next time: where the rows actually live.`;
 
 # What we left out
@@ -13,5 +14,5 @@ Next time: where the rows actually live.`;
   <Box id="s4" x={6.2} y={0.6} w={2.6} label="Session 4" sub="MVCC, isolation" appearAt={3} />
   <Box id="s5" x={9.3} y={0.6} w={2.6} label="Session 5" sub="locks, retries" appearAt={4} />
 
-  <Label x={6} y={3} text="every plan today scanned the whole table" appearAt={5} />
+  <Label x={6} y={3} text="the planner never had two paths to choose between" appearAt={5} />
 </Diagram>

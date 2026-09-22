@@ -1,4 +1,3 @@
-export const fixture = "orders";
 export const title = "Reading a plan in thirty seconds";
 export const notes = `The practical take-away. Four questions, in order.
 1. Innermost first — the tree executes bottom-up even though you read it
@@ -8,7 +7,7 @@ export const notes = `The practical take-away. Four questions, in order.
 3. Actual time is per loop. Multiply by loops before you believe it.
 4. Buffers read means disk. Buffers hit means memory. A plan with a small time
    and huge reads is a plan that got lucky on a warm cache.
-Run the example and walk the four questions against it.`;
+Leave this on screen while you say each one. The worked example is next.`;
 
 # Reading a plan in thirty seconds
 
@@ -17,12 +16,3 @@ Run the example and walk the four questions against it.`;
    where the plan went wrong, not the slowest one.
 3. **Actual time is per loop.** Multiply before believing it.
 4. **`read` means disk, `hit` means memory.**
-
-<Plan
-  analyze
-  appearAt={1}
-  sql={`SELECT c.country, count(*)
-FROM customers c JOIN orders o ON o.customer_id = c.id
-WHERE o.total_cents > 200000
-GROUP BY c.country;`}
-/>

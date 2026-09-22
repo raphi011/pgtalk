@@ -40,4 +40,4 @@ smoke:
 
 # Screenshot every slide of a session, failing on any console error.
 shots session="s1":
-    node test/shoot.mjs $(seq 0 11 | sed 's|^|{{session}}/|;s|$|/9|' | tr '\n' ' ')
+    node test/shoot.mjs $(seq 0 $(($(ls slides/{{session}}/*.mdx | wc -l) - 1)) | sed 's|^|{{session}}/|;s|$|/9|' | tr '\n' ' ')
