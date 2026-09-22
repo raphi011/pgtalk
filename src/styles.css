@@ -97,3 +97,47 @@ button.run { background: #238636; border-color: #2ea043; }
 .panel.error .error-line { color: var(--bad); white-space: pre-wrap; }
 .panel.error .error-aux { color: var(--dim); white-space: pre-wrap; }
 .sqlstate { color: var(--dim); }
+
+.slide { max-width: 1100px; margin: 0 auto; }
+.slide h1 { font-size: 2.4rem; margin: 0 0 0.3rem; letter-spacing: -0.02em; }
+.slide h2 { font-size: 1.3rem; margin: 0 0 1.5rem; font-weight: 400; color: var(--dim); }
+.slide p { max-width: 42em; }
+.deck.empty { color: var(--dim); }
+
+.diagram { width: 100%; height: auto; margin: 2rem 0; color: var(--dim); }
+
+.appear { opacity: 0; transform: translateY(14px); transition: opacity 260ms ease, transform 260ms ease; }
+.appear.in { opacity: 1; transform: none; }
+
+.box rect { fill: #161b22; stroke: var(--line); stroke-width: 2; }
+.box text { fill: var(--fg); font: 600 19px system-ui, sans-serif; }
+.box text.sub { fill: var(--dim); font: 400 15px var(--mono); }
+.box.tone-accent rect { stroke: var(--accent); }
+.box.tone-warn rect { stroke: var(--warn); }
+
+.arrow line { stroke: var(--dim); stroke-width: 2.5; }
+.arrow text { fill: var(--dim); font: 400 15px system-ui, sans-serif; }
+
+.label text { fill: var(--fg); font: 400 20px var(--mono); }
+.highlight rect { fill: none; stroke: var(--accent); stroke-width: 3; stroke-dasharray: 8 6; }
+
+.chrome {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  display: flex; gap: 1.2rem; align-items: center;
+  padding: 0.4rem 1.2rem;
+  background: #0d1117ee;
+  border-top: 1px solid var(--line);
+  color: var(--dim);
+  font: 400 0.75rem var(--mono);
+}
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--bad); }
+.dot.ok { background: var(--ok); }
+.chrome .fatal { color: var(--bad); }
+
+.notes {
+  position: fixed; right: 1.2rem; bottom: 2.6rem; width: 26rem;
+  padding: 1rem; border: 1px solid var(--accent); border-radius: 8px;
+  background: #0d1117f2; color: var(--fg);
+  font-size: 0.9rem; white-space: pre-wrap;
+}

@@ -1,0 +1,13 @@
+export const fixture = "orders";
+export const title = "Two different failures";
+export const notes = `Run both. The first never reaches the catalog — it fails on grammar.
+The second parses fine and dies on meaning. Different stage, different SQLSTATE.`;
+
+# Two different failures
+
+Syntax belongs to the parser. Meaning belongs to the analyzer. They fail
+separately, and PostgreSQL tells you which one it was.
+
+<Runnable sql="SELECT FROM WHERE customers;" appearAt={1} />
+
+<Runnable sql="SELECT nope FROM customers;" appearAt={2} />
