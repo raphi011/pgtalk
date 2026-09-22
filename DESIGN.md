@@ -153,8 +153,13 @@ matters most — when a query fails, the diagram still tells the story.
 **A3. A small step DSL, with an escape hatch.** Four primitives — `<Box>`,
 `<Arrow>`, `<Label>`, `<Highlight>` — plus `<Code>` for highlighted SQL, each
 taking `appearAt={n}` and an optional `hideAt={n}`, placed on an explicit
-coarse grid. `hideAt` is what lets one caption line replace the previous one
-instead of five of them stacking up under a diagram. No auto-layout: it reads as a time-saver and then fights
+coarse grid. `hideAt` is what lets one caption replace the previous one
+instead of five of them stacking up under a diagram.
+
+Anything longer than a caption goes in a `<Note appearAt hideAt>` block
+underneath, which is HTML rather than SVG: it wraps on its own, carries inline
+code and bold, and reserves its height so swapping one note for another does
+not shift the slide. SVG tspans would need every line break placed by hand. No auto-layout: it reads as a time-saver and then fights
 every diagram that needs a box moved slightly for an arrow to read.
 
 `<Step n={3}>` stays public as a primitive, so a diagram the DSL cannot express

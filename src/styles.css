@@ -156,3 +156,17 @@ button.run { background: #238636; border-color: #2ea043; }
 .sql-prefix pre { padding-bottom: 0; opacity: 0.65; }
 .sql-prefix + .sql pre, .sql-prefix + .sql-edit { padding-top: 0.2rem; }
 .plan-meta .loops { color: var(--accent); }
+
+/* Reserved height so swapping one note for another does not shift the slide. */
+.note {
+  min-height: 7.5rem;
+  max-width: 46em;
+  margin: 1.5rem 0 0;
+  color: var(--fg);
+  animation: fade-in 260ms ease;
+}
+.note p { margin: 0 0 0.6rem; }
+.note code { color: var(--accent); font-family: var(--mono); font-size: 0.92em; }
+.note strong { color: var(--fg); }
+
+@keyframes fade-in { from { opacity: 0; transform: translateY(8px); } }

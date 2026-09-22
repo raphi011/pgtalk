@@ -1,32 +1,88 @@
 export const title = "The five stages";
-export const notes = `Name each stage as it lands; the caption under the boxes is the
-one sentence for it.
-The point: these are separate programs with separate failure modes. A syntax
-error and a missing column come from different stages and say so differently,
-which the next slide shows.
-Land on the planner — it is the only stage that makes a decision it could
-regret, and the rest of the talk is about that decision.`;
+export const notes = `Let each note do the talking; you only need to add the aside.
+Parser: the character position in a syntax error is the giveaway — it has no
+idea what a customer is.
+Analyzer: this is where the "did you mean" hint comes from.
+Rewriter: mention that a slow view is usually a planning problem created here.
+Planner: hold on this one. It never reads a row, which is the whole reason the
+rest of the talk exists.
+Executor: the only stage EXPLAIN ANALYZE can time.`;
 
 # The five stages
 
-<Diagram cols={12} rows={4}>
-  <Box id="par" x={0} y={1} w={2} label="Parser" sub="text → AST" appearAt={1} />
-  <Box id="anl" x={2.5} y={1} w={2} label="Analyzer" sub="AST → query" appearAt={2} />
-  <Box id="rew" x={5} y={1} w={2} label="Rewriter" sub="views, rules" appearAt={3} />
-  <Box id="pln" x={7.5} y={1} w={2} label="Planner" sub="query → plan" appearAt={4} tone="accent" />
-  <Box id="exe" x={10} y={1} w={2} label="Executor" sub="plan → rows" appearAt={5} />
+<Diagram cols={12} rows={2}>
+  <Box id="par" x={0} y={0.5} w={2} label="Parser" sub="text → AST" appearAt={1} />
+  <Box id="anl" x={2.5} y={0.5} w={2} label="Analyzer" sub="AST → query" appearAt={2} />
+  <Box id="rew" x={5} y={0.5} w={2} label="Rewriter" sub="views, rules" appearAt={3} />
+  <Box id="pln" x={7.5} y={0.5} w={2} label="Planner" sub="query → plan" appearAt={4} tone="accent" />
+  <Box id="exe" x={10} y={0.5} w={2} label="Executor" sub="plan → rows" appearAt={5} />
 
   <Arrow from="par" to="anl" appearAt={2} />
   <Arrow from="anl" to="rew" appearAt={3} />
   <Arrow from="rew" to="pln" appearAt={4} />
   <Arrow from="pln" to="exe" appearAt={5} />
 
-  <Label x={6} y={3} appearAt={1} hideAt={2} text="grammar: is this a sentence at all?" />
-  <Label x={6} y={3} appearAt={2} hideAt={3} text="meaning: do these tables and columns exist?" />
-  <Label x={6} y={3} appearAt={3} hideAt={4} text="expansion: views become their definitions" />
-  <Label x={6} y={3} appearAt={4} hideAt={5} text="choice: which equivalent plan is cheapest?" />
-  <Label x={6} y={3} appearAt={5} hideAt={6} text="work: pull rows up through the plan tree" />
-
   <Highlight target="pln" appearAt={6} />
-  <Label x={6} y={3} appearAt={6} text="the only stage that guesses" />
 </Diagram>
+
+<Note appearAt={1} hideAt={2}>
+
+**Grammar, and nothing else.** It knows that `SELECT` must be followed by a
+list of expressions. It does not know what a `customer` is.
+
+`SELECT FRUM customers` dies here, at a character position.
+`SELECT nope FROM customers` sails straight through.
+
+</Note>
+
+<Note appearAt={2} hideAt={3}>
+
+**Meaning.** Every name is resolved against the catalog: `customers` becomes
+an OID, `email` becomes an attribute number, `=` becomes one specific function
+for one specific pair of types.
+
+Because it has the catalog open, this is the stage that can tell you what you
+probably meant.
+
+</Note>
+
+<Note appearAt={3} hideAt={4}>
+
+**Expansion.** A query against a view is replaced by the view's definition.
+Rules and row-level security policies are applied here too.
+
+Most queries pass through untouched — but a view of a view of a view arrives
+at the planner much larger than you wrote it.
+
+</Note>
+
+<Note appearAt={4} hideAt={5}>
+
+**Choice.** It enumerates equivalent ways to answer the query — which index,
+which join order, which join algorithm — prices each one using statistics and
+a handful of cost constants, and keeps the cheapest.
+
+It never reads a single row of your data. Every number it produces is a
+prediction.
+
+</Note>
+
+<Note appearAt={5} hideAt={6}>
+
+**Work.** It walks the chosen plan as a tree of iterators, each node asking
+its children for one more row.
+
+This is the only stage that touches your data, and the only one
+`EXPLAIN ANALYZE` can put a clock on.
+
+</Note>
+
+<Note appearAt={6}>
+
+**One of these five guesses.** The parser, analyzer, rewriter and executor are
+deterministic: the same input gives the same output, every time.
+
+The planner is the one that can be right about everything it knows and still
+choose a plan that takes four minutes.
+
+</Note>
