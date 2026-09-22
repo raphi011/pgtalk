@@ -171,6 +171,12 @@ costs and row estimates, actual-versus-estimated marked when the plan came from
 `ANALYZE`. The largest single build item, and it carries two of the five
 sessions. Text plans are unreadable past about six lines on a projector.
 
+Actual rows and times are shown per loop, exactly as psql prints them, rather
+than multiplied out. A listener checking the tree against their own terminal
+has to see the same figures, and the multiplication would be wrong under a
+`Gather` in any case, where loops counts workers running concurrently rather
+than one repetition after another.
+
 The block shows `EXPLAIN (ANALYZE, BUFFERS)` above the query and sends that
 plus `FORMAT JSON`. Hiding the command entirely was the first version and it
 was wrong: a listener could not reproduce what they had just watched, on a

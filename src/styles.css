@@ -155,3 +155,4 @@ button.run { background: #238636; border-color: #2ea043; }
 
 .sql-prefix pre { padding-bottom: 0; opacity: 0.65; }
 .sql-prefix + .sql pre, .sql-prefix + .sql-edit { padding-top: 0.2rem; }
+.plan-meta .loops { color: var(--accent); }

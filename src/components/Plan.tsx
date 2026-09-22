@@ -48,16 +48,20 @@ function title(node: PlanNode) {
 }
 
 function Node({ node, depth = 0 }: { node: PlanNode; depth?: number }) {
+  // Every actual number PostgreSQL reports is per loop, and so is the
+  // estimate. They are shown as psql shows them, unmultiplied: a listener
+  // comparing this tree against their own terminal must see the same figures,
+  // and multiplying would be wrong anyway under a Gather, where loops counts
+  // workers running at the same time rather than one after another.
   const estimated = node["Plan Rows"];
   const actual = node["Actual Rows"];
   const loops = node["Actual Loops"] ?? 1;
-  const actualTotal = actual === undefined ? undefined : actual * loops;
   const ratio =
-    actualTotal === undefined
+    actual === undefined
       ? 0
-      : Math.max(estimated, 1) / Math.max(actualTotal, 1) >= MISESTIMATE ||
-          Math.max(actualTotal, 1) / Math.max(estimated, 1) >= MISESTIMATE
-        ? Math.max(estimated, actualTotal) / Math.max(1, Math.min(estimated, actualTotal))
+      : Math.max(estimated, 1) / Math.max(actual, 1) >= MISESTIMATE ||
+          Math.max(actual, 1) / Math.max(estimated, 1) >= MISESTIMATE
+        ? Math.max(estimated, actual) / Math.max(1, Math.min(estimated, actual))
         : 0;
 
   const conditions = [
@@ -75,12 +79,12 @@ function Node({ node, depth = 0 }: { node: PlanNode; depth?: number }) {
         </span>
         <span>
           rows {estimated.toLocaleString()}
-          {actualTotal !== undefined ? ` → ${actualTotal.toLocaleString()}` : ""}
+          {actual !== undefined ? ` → ${actual.toLocaleString()}` : ""}
         </span>
         {node["Actual Total Time"] !== undefined ? (
-          <span>{(node["Actual Total Time"] * loops).toFixed(2)} ms</span>
+          <span>{node["Actual Total Time"].toFixed(2)} ms</span>
         ) : null}
-        {loops > 1 ? <span>loops {loops.toLocaleString()}</span> : null}
+        {loops > 1 ? <span className="loops">loops {loops.toLocaleString()}</span> : null}
         {node["Rows Removed by Filter"] ? (
           <span>−{node["Rows Removed by Filter"].toLocaleString()} filtered</span>
         ) : null}
