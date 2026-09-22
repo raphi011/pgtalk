@@ -1,0 +1,63 @@
+export const title = "What the planner actually does";
+
+# What the planner actually does
+
+<Diagram cols={12} rows={5}>
+  <Box id="stats" x={0} y={0} w={2.6} label="Statistics" sub="pg_statistic" appearAt={1} />
+  <Box id="cost"  x={0} y={1.6} w={2.6} label="Cost constants" sub="seq_page_cost, …" appearAt={2} />
+  <Box id="shape" x={0} y={3.2} w={2.6} label="Candidate plans" sub="scans, joins, orders" appearAt={3} />
+
+  <Box id="model" x={4.5} y={1.6} w={3} label="Cost model" sub="arithmetic, no I/O" appearAt={4} tone="accent" />
+  <Box id="plan"  x={9} y={1.6} w={3} label="Chosen plan" sub="lowest total cost" appearAt={6} />
+
+  <Arrow from="stats" to="model" appearAt={4} />
+  <Arrow from="cost" to="model" appearAt={4} />
+  <Arrow from="shape" to="model" appearAt={4} />
+  <Arrow from="model" to="plan" appearAt={6} />
+
+  <Label x={6} y={4.6} text="never reads a single row" appearAt={5} />
+</Diagram>
+
+<Note appearAt={1} hideAt={2}>
+
+**Statistics, from a sample.** `ANALYZE` reads about 30,000 rows per table,
+whatever the table's size, and keeps summaries: the most common values, a
+histogram of the rest, the fraction of NULLs.
+
+</Note>
+
+<Note appearAt={2} hideAt={3}>
+
+**Cost constants.** `seq_page_cost = 1.0`, `random_page_cost = 4.0`,
+`cpu_tuple_cost = 0.01`. They are relative: everything is priced in multiples
+of one sequential page read.
+
+</Note>
+
+<Note appearAt={3} hideAt={4}>
+
+**Candidate plans.** Every access path for every table, every join order,
+every join algorithm. Up to twelve tables the search is exhaustive.
+
+</Note>
+
+<Note appearAt={4} hideAt={5}>
+
+**Arithmetic.** Each candidate is priced by multiplying estimated pages and
+rows by those constants.
+
+</Note>
+
+<Note appearAt={5} hideAt={6}>
+
+**No I/O, no sampling at plan time.** Planning a query against 500 million
+rows takes about as long as planning it against an empty table.
+
+</Note>
+
+<Note appearAt={6}>
+
+**The cheapest wins.** When the chosen plan is bad, one of the three inputs
+was stale, missing or wrong. The planner did its job correctly on bad inputs.
+
+</Note>

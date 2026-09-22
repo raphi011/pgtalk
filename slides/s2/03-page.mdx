@@ -1,0 +1,91 @@
+export const fixture = "storage";
+export const title = "Inside one of those pages";
+
+# Inside one of those pages
+
+<Diagram cols={12} rows={3.6}>
+  {/* The file from the previous slide, and the one page this slide is about.
+      Raw SVG rather than <Box>: nine cells of a strip are a picture, not nine
+      boxes anything else needs to refer to (A3). */}
+  <Step n={1}>
+    <g className="box">
+      {[0, 1, 2, 4, 5, 6, 7, 8].map((i) => (
+        <rect key={i} x={334 + i * 60} y={6} width={52} height={28} rx={4} />
+      ))}
+    </g>
+    <g className="box tone-accent">
+      <rect x={514} y={6} width={52} height={28} rx={4} />
+    </g>
+    <g className="arrow">
+      <line x1={540} y1={40} x2={600} y2={104} markerEnd="url(#arrowhead)" />
+    </g>
+    <rect className="page-frame" x={80} y={110} width={1040} height={240} rx={12} />
+  </Step>
+
+  <Label x={3.1} y={0.28} text="the file — 3677 pages" align="end" appearAt={1} />
+  <Label x={1.1} y={3.35} text="byte 0" align="start" appearAt={1} />
+  <Label x={10.9} y={3.35} text="byte 8191" align="end" appearAt={1} />
+
+  <Box id="hdr" x={0.95} y={1.2} w={10.1} h={0.5} label="page header — 24 bytes" appearAt={2} />
+  <Box id="lp" x={0.95} y={1.9} w={3.6} h={0.85} label="line pointers" sub="4 bytes each, growing right" appearAt={3} />
+  <Box id="tup" x={7.35} y={1.9} w={3.7} h={0.85} label="tuples" sub="growing left" appearAt={3} />
+  <Box id="free" x={4.65} y={1.9} w={2.6} h={0.85} label="free space" appearAt={4} tone="warn" />
+
+  <Arrow from="lp" to="free" appearAt={5} />
+  <Arrow from="tup" to="free" appearAt={5} />
+</Diagram>
+
+<Note appearAt={1} hideAt={2}>
+
+**One of the 3677, and they all have this shape.** The executor never reads
+less than one and never reads more: a page is what comes off the disk, what sits in the buffer cache, and
+what `EXPLAIN (BUFFERS)` counts.
+
+</Note>
+
+<Note appearAt={2} hideAt={3}>
+
+**The same 24 bytes at the front of every one**: a WAL position, a checksum,
+and the two offsets that say where the free space starts and ends.
+
+</Note>
+
+<Note appearAt={3} hideAt={4}>
+
+**Two arrays, at opposite ends.** Line pointers grow from the front; tuple
+data is written from the back. A line pointer is 4 bytes: an offset, a length
+and a flag.
+
+The indirection is what lets a tuple move inside its page without anything
+outside the page noticing.
+
+</Note>
+
+<Note appearAt={4} hideAt={5}>
+
+**Free space is what is left in the middle.** `pd_lower` and `pd_upper` in the
+header are those two boundaries, and the gap between them is the page's
+capacity for the next row.
+
+</Note>
+
+<Note appearAt={5} hideAt={6}>
+
+**They meet, and the page is full.** A row that does not fit goes on another
+page. Nothing is ever split across two pages — which is why a row larger than
+about 2 kB needs the TOAST mechanism at the end of this session.
+
+</Note>
+
+<Note appearAt={6}>
+
+**So read the header of a real one.** `pd_lower` and `pd_upper` are the two
+numbers the diagram just drew.
+
+</Note>
+
+<Runnable
+  appearAt={7}
+  sql={`SELECT lower, upper, special, pagesize, lower - 24 AS lp_bytes, upper - lower AS free
+FROM page_header(get_raw_page('orders', 0));`}
+/>

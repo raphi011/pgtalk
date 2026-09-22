@@ -1,0 +1,72 @@
+export const fixture = "storage";
+export const title = "HOT: the update that skips the indexes";
+
+# HOT: the update that skips the indexes
+
+<Runnable
+  appearAt={1}
+  hideAt={2}
+  sql={`DROP TABLE IF EXISTS shipments;
+CREATE TABLE shipments (id int PRIMARY KEY, carrier text, status text);
+INSERT INTO shipments VALUES (1, 'DHL', 'packed'), (2, 'UPS', 'packed'), (3, 'GLS', 'packed');`}
+/>
+
+<Runnable appearAt={2} hideAt={4} sql="UPDATE shipments SET status = 'shipped' WHERE id = 2;" />
+
+<PageMap
+  appearAt={3}
+  hideAt={7}
+  name="hot"
+  sql={`SELECT lp, lp_flags, t_ctid, heap_tuple_infomask_flags(t_infomask, t_infomask2) AS flags
+FROM heap_page_items(get_raw_page('shipments', 0));`}
+/>
+
+<Note appearAt={4} hideAt={5}>
+
+**`HEAP_ONLY_TUPLE`.** No index covers `status`, and the new version fitted on
+the same page — so the index was not touched at all. The primary key still
+points at `(0,2)`, and the forward pointer takes a reader the rest of the way.
+
+</Note>
+
+<Note appearAt={5} hideAt={6}>
+
+Now change the one column that *is* indexed.
+
+</Note>
+
+<Runnable appearAt={6} hideAt={7} sql="UPDATE shipments SET id = 12 WHERE id = 3;" />
+
+<PageMap
+  appearAt={7}
+  hideAt={10}
+  name="keys"
+  against="hot"
+  sql={`SELECT lp, lp_flags, t_ctid, heap_tuple_infomask_flags(t_infomask, t_infomask2) AS flags
+FROM heap_page_items(get_raw_page('shipments', 0));`}
+/>
+
+<Note appearAt={8} hideAt={9}>
+
+**No `HEAP_ONLY_TUPLE` on line pointer 5** — `HEAP_KEYS_UPDATED` on the old
+version instead. A new index
+entry was written, and the old one now points at a dead tuple that a vacuum
+will have to visit the index to clear.
+
+</Note>
+
+<Runnable appearAt={9} hideAt={10} sql="VACUUM shipments;" />
+
+<PageMap
+  appearAt={10}
+  against="keys"
+  sql={`SELECT lp, lp_flags, lp_off, t_ctid FROM heap_page_items(get_raw_page('shipments', 0));`}
+/>
+
+<Note appearAt={11}>
+
+**Line pointer 2 became a redirect** (`lp_flags = 2`) — the index entry stays
+valid and hops to the live version — while 3 went straight to free, because
+its index entry had to be removed first.
+
+</Note>

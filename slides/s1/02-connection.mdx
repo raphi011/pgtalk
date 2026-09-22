@@ -1,0 +1,56 @@
+export const fixture = "orders";
+export const title = "One connection, one process";
+
+# One connection, one process
+
+<Diagram cols={12} rows={3}>
+  <Box id="pm" x={0} y={1} w={2.6} label="postmaster" sub="listens on 5432" appearAt={1} />
+
+  <Box id="b1" x={4.2} y={0.1} w={3} label="backend — s1" sub="one OS process" appearAt={2} />
+  <Box id="b2" x={4.2} y={1.9} w={3} label="backend — s2" sub="one OS process" appearAt={2} />
+
+  <Box id="shm" x={8.8} y={1} w={3.2} label="shared memory" sub="buffers, locks, WAL" appearAt={3} />
+
+  <Arrow from="pm" to="b1" appearAt={2} />
+  <Arrow from="pm" to="b2" appearAt={2} />
+  <Arrow from="b1" to="shm" appearAt={3} />
+  <Arrow from="b2" to="shm" appearAt={3} />
+</Diagram>
+
+<Note appearAt={1} hideAt={2}>
+
+**Nothing runs your query yet.** The postmaster accepts the connection,
+authenticates it, and then does no work on it at all.
+
+</Note>
+
+<Note appearAt={2} hideAt={3}>
+
+**It forks.** One connection becomes one process, for the life of that
+connection. Your session's `SET`s, its prepared statements, its temporary
+tables and its `work_mem` allocations all live inside that process and die
+with it.
+
+</Note>
+
+<Note appearAt={3} hideAt={4}>
+
+**Only the bottom half is shared.** Page cache, the lock table and WAL are
+one copy for the whole server. Everything above them is per-process, which is
+why a connection is not free and why `max_connections` is a number with
+consequences.
+
+</Note>
+
+<Note appearAt={4}>
+
+**Two panes, two processes.** Every slide in this series runs `s1` and `s2` on
+separate connections, so these are two real backends — which is the whole of
+sessions 4 and 5.
+
+</Note>
+
+<Sessions>
+  <Runnable session="s1" sql="SELECT pg_backend_pid();" appearAt={4} />
+  <Runnable session="s2" sql="SELECT pg_backend_pid();" appearAt={4} />
+</Sessions>

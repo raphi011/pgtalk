@@ -39,6 +39,16 @@ send({ type: "restore", fixture: "orders", force: true });
 const restored = await until((m) => m.type === "restored");
 check("fixture restores", restored.durationMs < 3000, `${restored.durationMs.toFixed(0)} ms`);
 
+// Pressing Enter the moment a slide with a new fixture appears sends a run
+// while the demo database is between DROP and CREATE. It must wait for the
+// copy rather than connect to a database that is not there.
+let mark = log.length;
+send({ type: "restore", fixture: "orders", force: true });
+send({ type: "run", blockId: "race", session: "s1", sql: "SELECT 1;" });
+const race = await until((m) => m.blockId === "race", 10000, mark);
+check("a run sent during a restore waits for it", race.type === "result", race.error?.message);
+check("and raises no fatal", !log.slice(mark).some((m) => m.type === "fatal"));
+
 send({ type: "run", blockId: "a", session: "s1", sql: "SELECT count(*) FROM orders WHERE status = 'shipped';" });
 const a = await until((m) => m.blockId === "a");
 check("simple query returns rows", a.type === "result" && a.results[0].rows.length === 1, JSON.stringify(a.results?.[0]?.rows));
@@ -57,6 +67,7 @@ check("open transaction shows as in-transaction", state.s1?.state === "in-transa
 send({ type: "run", blockId: "d", session: "s2", sql: "UPDATE orders SET status = 'cancelled' WHERE id = 1;" });
 const blocked = await until((m) => m.type === "state" && m.session === "s2" && m.state === "blocked");
 check("conflicting write reports blocked", true, blocked.waiting);
+check("and names the session holding the lock", blocked.blockedBy?.join() === "s1", JSON.stringify(blocked.blockedBy));
 check("blocked statement has not settled", !log.some((m) => m.blockId === "d"));
 
 send({ type: "run", blockId: "e", session: "s1", sql: "COMMIT;" });

@@ -1,0 +1,73 @@
+export const fixture = "bloat";
+export const title = "Autovacuum, and its threshold";
+
+# Autovacuum, and its threshold
+
+<Runnable
+  appearAt={1}
+  hideAt={4}
+  sql={`SELECT name, setting, unit FROM pg_settings
+WHERE name IN ('autovacuum_naptime',
+               'autovacuum_vacuum_threshold',
+               'autovacuum_vacuum_scale_factor',
+               'autovacuum_max_workers',
+               'autovacuum_vacuum_cost_delay')
+ORDER BY name;`}
+/>
+
+<Note appearAt={2} hideAt={3}>
+
+**Dead tuples ≥ 50 + 0.2 × live rows.** A table is vacuumed once a fifth of it
+is garbage — a percentage, not a size.
+
+</Note>
+
+<Note appearAt={3} hideAt={4}>
+
+**So the threshold grows with the table.** 10 000 rows: vacuum at 2 050 dead.
+100 million rows: vacuum at 20 million dead, several gigabytes of garbage
+tolerated before a worker even starts.
+
+On a big, hot table the scale factor is the first thing to lower — per table,
+not globally.
+
+</Note>
+
+<Runnable
+  appearAt={4}
+  hideAt={6}
+  sql={`SELECT reltuples::bigint                            AS live_rows,
+       (50 + 0.2 * reltuples)::bigint                 AS vacuum_at,
+       reloptions
+FROM pg_class WHERE relname = 'orders';`}
+/>
+
+<Note appearAt={5} hideAt={6}>
+
+**And this table is opted out entirely.** `autovacuum_enabled = off`, set by
+this deck's fixture so the last three slides could hold still. In production
+that setting is a loaded gun: nothing warns you that a table is no longer
+being maintained.
+
+</Note>
+
+<Runnable appearAt={6} hideAt={7} sql="ANALYZE orders;" />
+
+<Runnable
+  appearAt={7}
+  sql={`SELECT relname, n_live_tup, n_dead_tup, last_autovacuum, autovacuum_count
+FROM pg_stat_user_tables
+WHERE relname IN ('orders', 'customers', 'order_items');`}
+/>
+
+<Note appearAt={8}>
+
+**This is the table to watch in production.** `n_dead_tup` against
+`n_live_tup`, and `last_autovacuum` — a timestamp that is hours old on a busy
+table means the worker cannot keep up, and the cost delay is the reason.
+
+`orders` reports as much garbage as data here — 500 000 of each. `customers`
+and `order_items` report nothing at all, because a fixture restore copies the
+data and not the statistics, and only `orders` has been analysed since.
+
+</Note>

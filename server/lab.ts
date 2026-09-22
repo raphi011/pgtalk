@@ -24,6 +24,7 @@ class Session {
   pid = 0;
   state: SessionState = "disconnected";
   waiting?: string;
+  blockedBy?: string[];
   /** Resolves when the in-flight query settles; undefined when idle. */
   inFlight?: Promise<unknown>;
   /** The block whose query is in flight, and the one abandoned by a reset. */
@@ -46,6 +47,12 @@ export class Lab {
   private poller?: NodeJS.Timeout;
   /** Serialises the admin connection: one client cannot run two queries. */
   private adminQueue: Promise<unknown> = Promise.resolve();
+  /**
+   * Settles when the last requested restore has finished. Runs wait on it and
+   * nothing else does: queueing runs behind each other instead would leave a
+   * COMMIT stuck behind the blocked statement it is meant to release (E2).
+   */
+  private restoring: Promise<unknown> = Promise.resolve();
 
   constructor(private emit: Emit) {}
 
@@ -98,11 +105,12 @@ export class Lab {
     return s;
   }
 
-  private setState(s: Session, state: SessionState, waiting?: string) {
-    if (s.state === state && s.waiting === waiting) return;
+  private setState(s: Session, state: SessionState, waiting?: string, blockedBy?: string[]) {
+    if (s.state === state && s.waiting === waiting && s.blockedBy?.join() === blockedBy?.join()) return;
     s.state = state;
     s.waiting = waiting;
-    this.emit({ type: "state", session: s.name, state, pid: s.pid, waiting });
+    s.blockedBy = blockedBy;
+    this.emit({ type: "state", session: s.name, state, pid: s.pid, waiting, blockedBy });
   }
 
   /**
@@ -110,14 +118,24 @@ export class Lab {
    * actually waiting on a lock; a slow sequential scan is `running` (E2).
    * Idle sessions report `in-transaction` when they hold an open transaction,
    * which is the state sessions 4 and 5 are about.
+   *
+   * A blocked session also names who it waits for: the other deck session by
+   * name, anything else (a psql the presenter opened) by pid, since that is
+   * what pg_stat_activity would show them.
    */
   private async poll() {
     const live = [...this.sessions.values()].filter((s) => s.client);
     if (!this.admin || live.length === 0) return;
     const pids = live.map((s) => s.pid);
     const { rows } = await this.withAdmin((admin) =>
-      admin.query<{ pid: string; state: string; wait_event_type: string | null; wait_event: string | null }>(
-        `SELECT pid, state, wait_event_type, wait_event
+      admin.query<{
+        pid: string;
+        state: string;
+        wait_event_type: string | null;
+        wait_event: string | null;
+        blockers: string;
+      }>(
+        `SELECT pid, state, wait_event_type, wait_event, pg_blocking_pids(pid)::text AS blockers
            FROM pg_stat_activity WHERE pid = ANY($1::int[])`,
         [pids],
       ),
@@ -128,7 +146,13 @@ export class Lab {
       if (!row) continue;
       if (s.inFlight) {
         if (row.wait_event_type === "Lock") {
-          this.setState(s, "blocked", `${row.wait_event_type}: ${row.wait_event}`);
+          // int[] arrives as its text form, `{123,456}` (textOnly).
+          const blockedBy = row.blockers
+            .slice(1, -1)
+            .split(",")
+            .filter(Boolean)
+            .map((pid) => live.find((o) => o.pid === Number(pid))?.name ?? `pid ${pid}`);
+          this.setState(s, "blocked", row.wait_event ?? undefined, blockedBy);
         } else {
           this.setState(s, "running");
         }
@@ -141,7 +165,18 @@ export class Lab {
   }
 
   async run(blockId: string, name: SessionName, sql: string) {
-    const s = await this.session(name);
+    // A run sent the moment a slide appears can arrive while its fixture is
+    // being copied, when the demo database does not exist.
+    await this.restoring;
+    let s: Session;
+    try {
+      s = await this.session(name);
+    } catch (err) {
+      // The block asked, so the block is answered (E3); the deck as a whole
+      // is not broken by one session failing to connect.
+      this.emit({ type: "error", blockId, session: name, error: toError(err), durationMs: 0 });
+      return;
+    }
     const notices: string[] = [];
     const onNotice = (n: { severity?: string; message?: string }) =>
       notices.push(`${n.severity}:  ${n.message}`);
@@ -248,7 +283,13 @@ export class Lab {
    * disconnected first: an open connection blocks DROP DATABASE, and after the
    * copy their old connection would point at a database that no longer exists.
    */
-  async restore(fixture: string, force = false) {
+  restore(fixture: string, force = false) {
+    const next = this.restoring.then(() => this.copyFixture(fixture, force));
+    this.restoring = next.catch(() => {});
+    return next;
+  }
+
+  private async copyFixture(fixture: string, force: boolean) {
     const started = performance.now();
     // Always answer, even when there is nothing to do: a caller waiting for
     // the reply must not hang because the fixture happened to be loaded.

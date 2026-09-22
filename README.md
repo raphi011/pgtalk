@@ -5,7 +5,7 @@ step-built diagrams and SQL that runs against a real PostgreSQL server on
 the presenter's machine.
 
 Five sessions of about 35 minutes — a query's life, storage, indexes,
-transactions and MVCC, concurrency in practice. Session 1 is written;
+transactions and MVCC, concurrency in practice. Sessions 1 and 2 are written;
 `DESIGN.md` records the decisions behind the rest.
 
 ## Running it
@@ -15,7 +15,7 @@ Needs a local PostgreSQL (18 at the time of writing), Node and
 
 ```sh
 pnpm install
-just bootstrap   # build the fixture template database and the demo copy
+just bootstrap   # build the fixture template databases and the demo copy
 just dev         # http://127.0.0.1:5173
 ```
 
@@ -27,5 +27,5 @@ Keys: `→`/`←` step, `↓`/`↑` slide, `Enter` run the last visible block,
 
 ```sh
 just smoke       # session layer against a running dev server
-just shots       # screenshot every slide, fail on any console error
+just shots s2    # screenshot every slide of a session, fail on any console error
 ```

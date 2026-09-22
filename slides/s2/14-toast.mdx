@@ -1,0 +1,60 @@
+export const fixture = "storage";
+export const title = "TOAST: when a value will not fit";
+
+# TOAST: when a value will not fit
+
+A tuple cannot span two pages, so a value bigger than about 2 kB has to go
+somewhere else.
+
+<Runnable
+  appearAt={1}
+  hideAt={3}
+  sql={`DROP TABLE IF EXISTS docs;
+CREATE TABLE docs (id int, kind text, body text);
+INSERT INTO docs VALUES
+  (1, 'short',        repeat('a', 100)),
+  (2, 'compressible', repeat('abcdefgh', 5000)),
+  (3, 'random',       (SELECT string_agg(md5(random()::text), '')
+                         FROM generate_series(1, 2000)));`}
+/>
+
+<Runnable
+  appearAt={2}
+  hideAt={5}
+  sql={`SELECT id, kind, length(body) AS chars, pg_column_size(body) AS stored
+FROM docs ORDER BY id;`}
+/>
+
+<Note appearAt={3} hideAt={4}>
+
+**40 000 characters in 477 bytes.** PostgreSQL compressed it and kept it in
+the row. Compression is tried first, and it is often enough.
+
+</Note>
+
+<Note appearAt={4} hideAt={5}>
+
+**The random one does not compress**, so it was moved out of line: split into
+2 kB chunks, written to a side table, and replaced in the row by an 18-byte
+pointer.
+
+</Note>
+
+<Runnable
+  appearAt={5}
+  sql={`SELECT pg_size_pretty(pg_relation_size('docs'))        AS heap,
+       pg_size_pretty(pg_total_relation_size('docs'))    AS total,
+       (SELECT relname FROM pg_class
+         WHERE oid = (SELECT reltoastrelid FROM pg_class WHERE relname = 'docs')) AS toast_table;`}
+/>
+
+<Note appearAt={6}>
+
+**One page of heap, 120 kB in total.** The rows stayed small — which is the
+point. A sequential scan over `docs` reads one page and never touches the
+TOAST table, because an out-of-line value is only fetched when the query
+actually selects that column.
+
+`SELECT *` on a wide table is not a style preference.
+
+</Note>

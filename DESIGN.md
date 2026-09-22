@@ -26,15 +26,53 @@ each ending on something usable the next working day.
 | 4 | Transactions and MVCC | snapshots, `xmin`/`xmax` | isolation levels and what each prevents |
 | 5 | Concurrency in practice | lock modes, wait graphs | `SELECT FOR UPDATE`, deadlocks, optimistic concurrency, retries |
 
-**F3. Not shared after the talk.** Slides carry speaker notes, not prose an
-absent reader could follow. Revisit once session 1 has been given once.
+**F2a. Connections are split between sessions 1 and 5.** The subject has
+three parts and they do not belong together. The process model — one backend
+process per connection, forked by the postmaster, carrying its own memory and
+its own catalog and plan caches — opens session 1, before the parser, because
+it is what "the query arrives" means and it is a prerequisite for nothing. The
+other two parts wait for session 5: what is session-scoped versus
+transaction-scoped (`SET`, prepared statements, temp tables, advisory locks,
+`LISTEN`), and pooling — session versus transaction mode, pool size against
+`max_connections`, and a connection held idle in a transaction holding a lock
+with it. Transaction-mode pooling breaks exactly the session-scoped list, so it
+cannot be explained before transactions exist, and it lands on the same wait
+graph session 5 already draws.
+
+Rejected as a sixth session: the process model alone does not fill 35 minutes,
+and pooling on its own is a deployment topic, which would break the 60/40 split
+of F2.
+
+**F3. Not shared after the talk.** The slides themselves carry nothing an
+absent reader could follow. What they do carry is *background*: each slide has
+a sibling `.notes.md` explaining what the slide teaches, why it is shaped that
+way, and the mechanism behind it in more depth than the slide shows. That is
+preparation material and an answer to a question from the floor, not a script
+to read from on stage. Revisit once session 1 has been given once.
 
 **F4. One screen.** No presenter view on a second display: it means a second
 window and cross-window state sync for something that depends on the room's
-HDMI working. Notes toggle on `n` instead.
+HDMI working. Notes open over the slide on `n` instead, nearly full screen and
+scrollable, since F3 makes them longer than a corner panel could hold. While
+they are open the deck ignores its own keys, so the arrows scroll the notes and
+nothing on stage moves underneath them.
 
 Keys: `->`/`<-` step, `Down`/`Up` slide, `Enter` run the focused block,
-`r` reset the slide, `e` edit SQL, `n` notes, `g` jump to a slide.
+`1`-`9` run a block by position, `r` reset the slide, `e` edit SQL, `n` notes,
+`g` jump to a slide.
+
+The focused block is the first on the slide that has not run yet, falling back
+to the last once they all have. On a `<Sessions>` slide that makes `Enter`
+walk `s1` then `s2`, which is the order those slides are written to be read in,
+and leaves a repeated `Enter` re-running the second one.
+
+**F4a. A fixed stage, zoomed to the window.** Every slide is laid out on a
+1600×900 stage and CSS-zoomed to fit, so the projector changes how big a slide
+is and never what fits on it: a slide that fits at rehearsal fits on stage.
+`just shots` fails on any slide whose content is taller than the stage, since
+the presenter cannot scroll mid-sentence. Anything that measures the screen
+gets zoomed pixels and has to divide the zoom back out before writing a size
+into a style; the stage provides it for that.
 
 ## Stack
 
@@ -64,8 +102,9 @@ so PostgreSQL's own message formatting can be reproduced.
 
 Each session is a dedicated non-pooled `Client`. Never a pool: `BEGIN` in `s1`
 must still be open on the next statement, which is the whole of sessions 4 and
-5. Cancellation opens a second connection and calls `pg_cancel_backend` on the
-known backend pid.
+5 — and by F2a, session 5 teaches that constraint, so the deck is a worked
+example of its own slide. Cancellation opens a second connection and calls
+`pg_cancel_backend` on the known backend pid.
 
 The loss is backslash meta-commands. `\timing` is measured on our side; `\d`
 becomes a catalog query if a slide ever needs it.
@@ -87,6 +126,15 @@ rewriting every block in sessions 1 to 3.
 lock never settles, and in session 5 that is the entire point — so a
 non-settling statement is `blocked`, shown loudly and deliberately, with no
 timeout. Only a dead connection or a protocol error is `failed`.
+
+**E2a. A blocked session names who it waits for.** The poller asks
+`pg_blocking_pids` alongside `pg_stat_activity`, and maps each pid to the deck
+session that owns it; anything else (a psql the presenter opened) shows as its
+pid. The badge reads `blocked by s1 on transactionid`, and `<Sessions>` draws a
+"waits for" connector from the waiting pane to the holder under the panes, so
+the wait graph session 5 is about is on screen rather than implied. The
+connector row is reserved even when empty, so a lock arriving does not shift
+the slide.
 
 **E3. Failures surface.** No cached-output fallback, no silent substitution of
 a recorded result. If a query breaks on stage it breaks visibly.
@@ -122,6 +170,26 @@ another slide — restores its own fixture and resets the sessions, interrupting
 whatever the first tab was doing. That is correct for one presenter and wrong
 for two, so do not leave a spare tab on the deck during a talk.
 
+**E4b. A fixture is built from the one before it.** `db/schema.sql` plus
+`db/seed.sql` make `orders`; `db/fixtures/<name>.sql` is applied to a copy of
+the previous template to make the next. Session 2 needs the page-inspection
+extensions (`storage`) and a table already churned once (`bloat`), and neither
+is worth thirty seconds of re-seeding when a template copy takes under a
+second.
+
+`storage` also sets `autovacuum_enabled = off` on `orders`. A 500k-row churn
+crosses the default threshold, so a worker would wake up mid-talk and undo the
+slide on screen. The autovacuum slide says so rather than letting the deck
+imply that a real server behaves this way.
+
+**E4c. A run waits for a restore in progress, and nothing else does.** `Enter`
+pressed the moment a slide with a new fixture appears sends a run while the
+demo database is between `DROP` and `CREATE`. Runs await the last restore
+before connecting, and a connect that still fails answers the block with an
+error (E3) rather than raising a deck-wide fatal. It is a barrier, not a queue:
+serialising runs behind each other would leave a `COMMIT` stuck behind the
+blocked statement it exists to release (E2).
+
 **E5. One schema for all five sessions.** `customers`, `orders`, `order_items`,
 with roughly 500k rows in `orders` — enough that a sequential scan and an index
 scan differ visibly on the clock, small enough to restore instantly from a
@@ -135,7 +203,6 @@ already understands from session 2.
 ```mdx
 ---
 fixture: orders
-notes: Ask who has read a plan before showing the tree.
 ---
 
 <Diagram>...</Diagram>
@@ -152,10 +219,22 @@ notes: Ask who has read a plan before showing the tree.
 files: at this size, a slide readable as a single unit while rehearsing beats
 reuse that will not arise.
 
+Notes live beside the slide as `<slide>.notes.md`, not as an exported string:
+at the length F3 asks for they want headings, lists and code blocks. The MDX
+plugin already compiles `.md` as plain markdown, so this costs no dependency,
+and a file that long sitting on top of the slide it describes would bury it.
+
 **A2. Diagrams are hand-authored and presenter-stepped.** Steps advance on
 arrow keys only; nothing is derived from query results. Deriving diagram state
 from real output is more work, more fragile live, and loses the property that
 matters most — when a query fails, the diagram still tells the story.
+
+**A2a. The heap page is the one derived diagram.** `<PageMap>` draws
+`heap_page_items` output as a page: line pointers, the tuple behind each, the
+`t_ctid` chain and redirects. Session 2's point is what a page looks like after
+a statement, which a hand-drawn picture could only assert. It stays a runnable
+block with a table/page toggle, so a failed query still fails visibly (E3) and
+the raw rows are one click away.
 
 **A3. A small step DSL, with an escape hatch.** Four primitives — `<Box>`,
 `<Arrow>`, `<Label>`, `<Highlight>` — plus `<Code>` for highlighted SQL, each
@@ -173,12 +252,57 @@ every diagram that needs a box moved slightly for an arrow to read.
 drops to raw SVG inside the same step machinery instead of forcing the DSL to
 grow.
 
+**A3b. Arrows draw, and can carry a pulse.** An arrow draws itself from source
+to target as it appears, and `pulse="forward" | "back"` with `pulseAt` sends a
+dot along it. `"back"` runs against the arrow, which is how a row travels up a
+plan tree whose arrows are requests travelling down: the executor slide needs
+both directions on one arrow.
+
+Arrows landing on the same side of a box get their own points along it, in the
+order of their sources, instead of piling their heads into one shape. This is
+placement of arrow ends, not layout: boxes stay where the author put them.
+Every arrow counts whether it has appeared yet or not, so one arriving later
+never moves one already on screen. Tails still share a point; a fan-out reads
+fine.
+
+**A3c. Questions to the room are stepped.** `<Predict appearAt>` is a prompt
+put before the answer is on screen. A prompt visible from step 0 has been read
+and half-answered before the presenter reaches it. Unlike a `<Note>` it
+reserves no height: it is not replaced by a later one.
+
+**A3a. `appearAt`/`hideAt` on a runnable block too.** A demo whose point is a
+before-and-after — vacuum, HOT, the xmin horizon — runs six or eight blocks,
+and stacking them all pushes the interesting one off the bottom of the screen,
+which F4 does not allow. So a block retires on `hideAt` exactly as a `<Note>`
+does, and the slide shows the two measurements being compared rather than
+every step taken to produce them. The session keeps what the block did: an
+open transaction survives its block leaving the screen.
+
+A block that runs `VACUUM` has to be a block of its own. Several statements in
+one block are sent as one simple query, which PostgreSQL wraps in a
+transaction, and `VACUUM` cannot run inside one.
+
 **A4. Results as HTML tables**, monospace, sized for a projector. psql's ASCII
 borders are familiar but spend horizontal space that font size needs.
+
+**A4a. A block can be compared against an earlier one.** A block given a `name`
+can be referenced by a later block's `against`, and changed cells then show
+`was → now` with the delta; a `<PageMap>` marks new slots and changed fields
+the same way. Before-and-after is the shape of most of session 2, and the
+"before" panel has usually left the screen by then (A3a), so the audience
+should not have to remember its numbers. Numeric columns are right-aligned, and
+`int8`/`numeric` values of five digits or more are grouped; `int4` is not,
+because `int4` columns here are identifiers such as pids, not quantities.
 
 **A5. SQL is highlighted and read-only** until `e` swaps in a plain textarea.
 Highlighting is what makes SQL legible from the back row; editing happens on
 perhaps one slide in twenty.
+
+**A5a. `<Morph>` for one statement becoming another form of itself.** Stepped,
+read-only SQL that animates token by token between texts (via
+`@shikijs/magic-move`), for slides where a cut would lose which part became
+which — the analyzer turning names into OIDs. Not a block: nothing runs. The
+text it morphs into is a sketch, and says so in a comment.
 
 **A6. `EXPLAIN` renders as a tree, and says so** from `EXPLAIN (FORMAT JSON)`: nested nodes,
 costs and row estimates, actual-versus-estimated marked when the plan came from
@@ -199,6 +323,13 @@ worse, because nobody types `FORMAT JSON` by hand — it yields unreadable JSON
 rather than this tree. So the pane shows the reproducible form and the panel
 footer names the difference.
 
+**A6a. The tree points at itself.** Each node carries a bar for its share of
+the root's actual time, and a node whose actual rows are off from the estimate
+by 10× or more is tinted. A `focus` list (`[{at, until?, node?, metric?}]`)
+steps through parts of the tree and dims the rest, so the four-questions slide
+can walk one question at a time over a single real plan instead of repeating
+it four times.
+
 ## Conventions
 
 - Deck state lives in the URL hash (`#/s4/12/3` — session, slide, step) so a
@@ -212,9 +343,10 @@ footer names the difference.
 2. ~~The WebSocket session layer.~~ `just smoke` proves E1, E2 and E4.
 3. ~~Step machinery and the diagram DSL.~~
 4. ~~The `EXPLAIN` tree.~~
-5. ~~Session 1 content.~~ Twelve slides in `slides/s1/`.
-6. Sessions 2 to 5. Each will need fixtures beyond `orders`: a bloated table
-   for session 2, an indexed copy for session 3.
+5. ~~Session 1 content.~~ Fourteen slides in `slides/s1/`.
+6. ~~Session 2 content.~~ Fifteen slides in `slides/s2/`, on the `storage` and
+   `bloat` fixtures.
+7. Sessions 3 to 5. Session 3 will want an indexed copy of the dataset.
 
 `just shots` renders every slide through the real keyboard path and fails on
 any console error, which is the closest thing to rehearsing without a room.

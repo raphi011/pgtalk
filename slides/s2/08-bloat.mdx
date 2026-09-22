@@ -1,0 +1,57 @@
+export const fixture = "storage";
+export const title = "Bloat, live";
+
+# Bloat, live
+
+<Runnable
+  appearAt={1}
+  hideAt={7}
+  name="before"
+  sql={`SELECT pg_size_pretty(pg_relation_size('orders')) AS file,
+       pg_relation_size('orders') / 8192               AS pages,
+       count(*)                                        AS rows
+FROM orders;`}
+/>
+
+<Note appearAt={2} hideAt={3}>
+
+Now one statement that changes nothing: every row is set to the value it
+already has. No row is added, no row is removed, no value differs afterwards.
+
+</Note>
+
+<Runnable appearAt={3} hideAt={4} sql="UPDATE orders SET status = status;" />
+
+<Runnable
+  appearAt={4}
+  against="before"
+  sql={`SELECT pg_size_pretty(pg_relation_size('orders')) AS file,
+       pg_relation_size('orders') / 8192               AS pages,
+       count(*)                                        AS rows
+FROM orders;`}
+/>
+
+<Note appearAt={5} hideAt={6}>
+
+**Twice the file, the same rows.** 500 000 new versions were appended and
+500 000 old ones were marked dead. Every sequential scan from now on reads
+7354 pages to find 500 000 rows.
+
+</Note>
+
+<Note appearAt={6} hideAt={7}>
+
+**This is the shape of every bloat incident.** Not deletes — updates. A queue
+table whose rows are updated four times each, a `last_seen_at` touched on
+every request, a batch job that rewrites yesterday's rows every night.
+
+</Note>
+
+<Runnable
+  appearAt={7}
+  sql={`SELECT pg_size_pretty(table_len) AS file,
+       tuple_count, dead_tuple_count,
+       round(dead_tuple_percent) AS dead_pct,
+       round(free_percent)       AS free_pct
+FROM pgstattuple('orders');`}
+/>

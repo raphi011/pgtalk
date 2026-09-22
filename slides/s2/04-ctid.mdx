@@ -1,0 +1,25 @@
+export const fixture = "storage";
+export const title = "ctid: page, then slot";
+
+# `ctid`: page, then slot
+
+Every table has a hidden `ctid` column. It is the physical address of a row
+version: the page number, and which line pointer on that page.
+
+<Runnable appearAt={1} sql="SELECT ctid, id, status, total_cents FROM orders WHERE id IN (1, 2, 500000);" />
+
+<Runnable
+  appearAt={2}
+  sql={`SELECT count(*)                                     AS rows,
+       count(*) / (pg_relation_size('orders') / 8192)      AS rows_per_page
+FROM orders;`}
+/>
+
+<Note appearAt={3}>
+
+**It is an address, not an identity.** It is the fastest possible way to fetch
+one row — and it changes the moment that row is updated. Never store it.
+
+An index entry is a key plus one of these, which is the whole of session 3.
+
+</Note>

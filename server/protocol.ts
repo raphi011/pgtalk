@@ -38,13 +38,18 @@ export type ClientMessage =
   | { type: "restore"; fixture: string; force?: boolean };
 
 export type ServerMessage =
-  /** Session state changed. `waiting` names the wait event when blocked. */
+  /**
+   * Session state changed. When blocked, `waiting` names the lock wait event
+   * (`transactionid`, `relation` ...) and `blockedBy` the sessions holding the
+   * lock (a pid for one outside the deck).
+   */
   | {
       type: "state";
       session: SessionName;
       state: SessionState;
       pid?: number;
       waiting?: string;
+      blockedBy?: string[];
     }
   | {
       type: "result";

@@ -1,0 +1,65 @@
+export const fixture = "bloat";
+export const title = "What VACUUM actually does";
+
+# What `VACUUM` actually does
+
+<Runnable
+  appearAt={1}
+  hideAt={7}
+  name="before"
+  sql={`SELECT pg_size_pretty(pg_relation_size('orders'))             AS file,
+       (SELECT pg_size_pretty(sum(avail)::bigint)
+          FROM pg_freespace('orders'))                              AS free_in_fsm,
+       (SELECT dead_tuple_count FROM pgstattuple('orders'))         AS dead;`}
+/>
+
+<Note appearAt={2} hideAt={3}>
+
+Half the file is dead tuples, and the free space map says there is **nowhere**
+to put a new row. That is why the previous slide's table kept extending.
+
+</Note>
+
+<Runnable appearAt={3} hideAt={4} sql="VACUUM orders;" />
+
+<Runnable
+  appearAt={4}
+  name="vacuumed"
+  against="before"
+  sql={`SELECT pg_size_pretty(pg_relation_size('orders'))             AS file,
+       (SELECT pg_size_pretty(sum(avail)::bigint)
+          FROM pg_freespace('orders'))                              AS free_in_fsm,
+       (SELECT dead_tuple_count FROM pgstattuple('orders'))         AS dead;`}
+/>
+
+<Note appearAt={5} hideAt={6}>
+
+**The file did not shrink by one byte.** The dead tuples are gone and 29 MB
+of space is now recorded as free — inside the same 57 MB file.
+
+`VACUUM` makes space reusable. It does not return it to the operating system.
+
+</Note>
+
+<Note appearAt={6} hideAt={7}>
+
+So the next churn should cost nothing. Same statement as two slides ago, on a
+table that is already twice the size it needs to be.
+
+</Note>
+
+<Runnable appearAt={7} hideAt={8} sql="UPDATE orders SET status = status;" />
+
+<Runnable
+  appearAt={8}
+  against="vacuumed"
+  sql="SELECT pg_size_pretty(pg_relation_size('orders')) AS file;"
+/>
+
+<Note appearAt={9}>
+
+**Still 57 MB.** The table has reached its working size: the space freed by
+each churn is exactly the space the next one needs. A vacuumed table stops
+growing — it just never gets smaller.
+
+</Note>

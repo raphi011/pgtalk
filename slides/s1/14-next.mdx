@@ -1,0 +1,16 @@
+export const title = "What we left out";
+
+# What we left out
+
+<Diagram cols={12} rows={2}>
+  <Box id="s2" x={0} y={0.6} w={2.6} label="Session 2" sub="pages, tuples, VACUUM" appearAt={1} />
+  <Box id="s3" x={3.1} y={0.6} w={2.6} label="Session 3" sub="indexes" appearAt={2} />
+  <Box id="s4" x={6.2} y={0.6} w={2.6} label="Session 4" sub="MVCC, isolation" appearAt={3} />
+  <Box id="s5" x={9.3} y={0.6} w={2.6} label="Session 5" sub="locks, retries" appearAt={4} />
+</Diagram>
+
+<Note appearAt={5}>
+  Every plan today was a sequential scan or a primary-key lookup: one sensible
+  way to run each query. The planner's real decisions start once an index gives
+  it a second path to price.
+</Note>

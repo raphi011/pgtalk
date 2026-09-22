@@ -1,0 +1,61 @@
+export const title = "The executor pulls";
+
+# The executor pulls
+
+Every node answers one question: *give me your next row*.
+
+<Diagram cols={12} rows={5}>
+  <Box id="agg"  x={4.5} y={0} w={3} label="Aggregate" sub="count(*)" appearAt={1} />
+  <Box id="filt" x={4.5} y={1.8} w={3} label="Filter" sub="status = 'shipped'" appearAt={1} />
+  <Box id="scan" x={4.5} y={3.6} w={3} label="Seq Scan" sub="orders" appearAt={1} />
+
+  <Arrow from="agg" to="filt" label="next?" appearAt={2} pulse="back" pulseAt={5} />
+  <Arrow from="filt" to="scan" label="next?" appearAt={3} pulse="back" pulseAt={4} />
+
+  <Highlight target="agg" appearAt={7} />
+</Diagram>
+
+<Note appearAt={1} hideAt={2}>
+
+**`count(*)` over the shipped orders, as a tree.** Nothing runs until the
+root is asked for a row.
+
+</Note>
+
+<Note appearAt={2} hideAt={4}>
+
+**Requests go down.** `Aggregate` needs input, so it asks `Filter` for a row,
+and `Filter` asks `Seq Scan`.
+
+</Note>
+
+<Note appearAt={4} hideAt={5}>
+
+**One row comes back up.** The scan reads the next tuple from its current page
+and returns it. Just the one.
+
+</Note>
+
+<Note appearAt={5} hideAt={6}>
+
+**One row, or skip.** `Filter` tests `status = 'shipped'`. A row that fails is
+never returned: the filter asks the scan again. A row that passes goes up, and
+`Aggregate` adds one.
+
+</Note>
+
+<Note appearAt={6} hideAt={7}>
+
+**Repeat 500,000 times**, then `Aggregate` returns its single row. Rows move
+one at a time; nothing between two nodes is ever a full intermediate result.
+
+</Note>
+
+<Note appearAt={7}>
+
+**So a node can stop asking.** Put a `LIMIT 10` where `Aggregate` is and the
+scan stops after ten matching rows. It is never asked for the eleventh. Under
+`count(*)` it cannot stop, because an aggregate needs every row before it can
+answer.
+
+</Note>

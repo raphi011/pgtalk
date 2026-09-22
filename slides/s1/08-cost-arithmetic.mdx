@@ -1,0 +1,19 @@
+export const fixture = "orders";
+export const title = "Cost is arithmetic you can do yourself";
+
+# Cost is arithmetic you can do yourself
+
+<Runnable
+  appearAt={1}
+  sql={`SELECT relname, relpages, reltuples::bigint
+FROM pg_class WHERE relname = 'orders';`}
+/>
+
+A sequential scan costs `relpages × seq_page_cost + reltuples × cpu_tuple_cost`,
+with `seq_page_cost = 1.0` and `cpu_tuple_cost = 0.01`.
+
+<Runnable appearAt={2} hideAt={3} sql="SET max_parallel_workers_per_gather = 0;" />
+
+<Predict appearAt={3}>Work out the scan's total cost before running it.</Predict>
+
+<Plan sql="SELECT count(*) FROM orders;" appearAt={3} />

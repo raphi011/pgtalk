@@ -1,0 +1,46 @@
+export const fixture = "storage";
+export const title = "UPDATE writes a new row";
+
+# `UPDATE` writes a new row
+
+<Runnable
+  appearAt={1}
+  hideAt={3}
+  sql={`DROP TABLE IF EXISTS shipments;
+CREATE TABLE shipments (id int PRIMARY KEY, carrier text, status text);
+INSERT INTO shipments VALUES (1, 'DHL', 'packed'), (2, 'UPS', 'packed'), (3, 'GLS', 'packed');`}
+/>
+
+<PageMap
+  appearAt={2}
+  hideAt={4}
+  name="before"
+  sql={`SELECT lp, lp_flags, lp_len, t_xmin, t_xmax, t_ctid
+FROM heap_page_items(get_raw_page('shipments', 0));`}
+/>
+
+<Note appearAt={3} hideAt={4}>
+
+Three tuples, three line pointers, every `t_xmax` zero and every `t_ctid`
+pointing at itself. Now change one value in one row.
+
+</Note>
+
+<Runnable appearAt={4} hideAt={5} sql="UPDATE shipments SET status = 'shipped' WHERE id = 2;" />
+
+<PageMap
+  appearAt={5}
+  against="before"
+  sql={`SELECT lp, lp_flags, lp_len, t_xmin, t_xmax, t_ctid
+FROM heap_page_items(get_raw_page('shipments', 0));`}
+/>
+
+<Note appearAt={6}>
+
+**Four tuples now, for three rows.** The old version at `(0,2)` is still
+there, byte for byte. What changed is its `t_xmax` — the transaction that
+ended it — and its `t_ctid`, which now points forward to `(0,4)`.
+
+Nothing was overwritten. An `UPDATE` is an insert plus a mark.
+
+</Note>

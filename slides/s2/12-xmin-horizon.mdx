@@ -1,0 +1,82 @@
+export const fixture = "storage";
+export const title = "One open transaction stops all of it";
+
+# One open transaction stops all of it
+
+<Runnable
+  appearAt={1}
+  hideAt={5}
+  session="s2"
+  sql={`BEGIN ISOLATION LEVEL REPEATABLE READ;
+SELECT count(*) FROM order_items;`}
+/>
+
+<Note appearAt={2} hideAt={3}>
+
+`s2` now holds a snapshot. It is reading nothing, doing nothing, and it will
+sit there — a report, a migration, a connection a framework forgot to close.
+
+</Note>
+
+<Runnable appearAt={3} hideAt={5} sql="UPDATE orders SET status = status WHERE id <= 100000;" />
+
+<Runnable appearAt={4} hideAt={5} sql="VACUUM orders;" />
+
+<Runnable
+  appearAt={5}
+  hideAt={7}
+  name="held"
+  sql={`SELECT dead_tuple_count,
+       pg_size_pretty(table_len) AS file,
+       (SELECT pg_size_pretty(sum(avail)::bigint) FROM pg_freespace('orders')) AS free_in_fsm
+FROM pgstattuple('orders');`}
+/>
+
+<Note appearAt={6} hideAt={7}>
+
+**The vacuum succeeded and removed nothing.** 100 000 dead tuples are still
+there, and the free space map is still empty.
+
+`s2`'s snapshot might still need those versions, so no version newer than it
+can be removed — by this vacuum or any other, manual or automatic.
+
+</Note>
+
+<Runnable
+  appearAt={7}
+  hideAt={10}
+  sql={`SELECT pid, state, backend_xmin, now() - xact_start AS open_for
+FROM pg_stat_activity
+WHERE datname = current_database() AND backend_xmin IS NOT NULL;`}
+/>
+
+<Note appearAt={8} hideAt={9}>
+
+**`backend_xmin` is the horizon.** The oldest one on the server holds back
+cleanup for every table in the cluster, not just the ones that transaction
+touched.
+
+</Note>
+
+<Runnable appearAt={9} hideAt={11} session="s2" sql="COMMIT;" />
+
+<Runnable appearAt={10} hideAt={12} sql="VACUUM orders;" />
+
+<Runnable
+  appearAt={11}
+  against="held"
+  sql={`SELECT dead_tuple_count,
+       pg_size_pretty(table_len) AS file,
+       (SELECT pg_size_pretty(sum(avail)::bigint) FROM pg_freespace('orders')) AS free_in_fsm
+FROM pgstattuple('orders');`}
+/>
+
+<Note appearAt={12}>
+
+**Same command, and now it works.** Nothing changed except that one
+transaction ended.
+
+This is the answer to almost every "autovacuum is running but the table keeps
+growing": find the oldest transaction, not a vacuum setting.
+
+</Note>

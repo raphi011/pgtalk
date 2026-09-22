@@ -1,0 +1,83 @@
+export const fixture = "storage";
+export const title = "A table is a file";
+
+# A table is a file
+
+<Diagram cols={12} rows={2.8}>
+  <Box id="rel" x={0} y={0.9} w={2.6} label="orders" sub="a name in the catalog" appearAt={1} />
+
+  <Box id="main" x={4.4} y={0} w={3.2} h={0.8} label="…/70445442" sub="main fork — the rows" appearAt={2} />
+  <Box id="fsm" x={4.4} y={0.95} w={3.2} h={0.8} label="…_fsm" sub="free space map" appearAt={4} />
+  <Box id="vm" x={4.4} y={1.9} w={3.2} h={0.8} label="…_vm" sub="visibility map" appearAt={4} />
+
+  <Box id="seg" x={9} y={0} w={3} h={0.8} label=".1, .2, .3 …" sub="1 GB per segment" appearAt={3} />
+
+  <Arrow from="rel" to="main" appearAt={2} />
+  <Arrow from="main" to="seg" appearAt={3} />
+  <Arrow from="rel" to="fsm" appearAt={4} />
+  <Arrow from="rel" to="vm" appearAt={4} />
+</Diagram>
+
+<Note appearAt={1} hideAt={2}>
+
+**The name is catalog, not filesystem.** `orders` is a row in `pg_class`. The
+file it points at is named after a number, and renaming the table does not
+rename the file.
+
+</Note>
+
+<Note appearAt={2} hideAt={3}>
+
+**One file for the rows.** Relative to the data directory:
+`base/<database oid>/<relfilenode>`. Nothing in that path is a name you chose.
+
+</Note>
+
+<Note appearAt={3} hideAt={4}>
+
+**It stops at 1 GB.** Past that PostgreSQL opens `…442.1`, then `…442.2`.
+A table is a sequence of files, which is why a 40 GB table is forty of them
+and why `ls` in a data directory is uninformative.
+
+</Note>
+
+<Note appearAt={4} hideAt={6}>
+
+**Two more forks, tiny and important.** The free space map records how much
+room each page has left, and the visibility map records which pages contain
+only tuples visible to everyone. Both are maintained by `VACUUM`, and both
+come back later this session.
+
+</Note>
+
+<Runnable
+  appearAt={5}
+  hideAt={7}
+  sql={`SELECT pg_relation_filepath('orders')            AS path,
+       pg_size_pretty(pg_relation_size('orders'))        AS main,
+       pg_size_pretty(pg_relation_size('orders', 'fsm')) AS fsm,
+       pg_size_pretty(pg_relation_size('orders', 'vm'))  AS vm,
+       pg_size_pretty(pg_total_relation_size('orders'))  AS total;`}
+/>
+
+<Note appearAt={6} hideAt={7}>
+
+**29 MB of rows, and the file is not a stream of them.** It is divided into
+blocks of exactly 8192 bytes, numbered from zero, and every read and every
+write the server does is one whole block.
+
+</Note>
+
+<Runnable
+  appearAt={7}
+  sql={`SELECT pg_size_pretty(pg_relation_size('orders')) AS file,
+       pg_relation_size('orders') / 8192               AS pages,
+       current_setting('block_size')                   AS block_size;`}
+/>
+
+<Note appearAt={8}>
+
+**3677 pages.** That is the number session 1's sequential scan was priced on,
+and the next slide is what one of them looks like inside.
+
+</Note>

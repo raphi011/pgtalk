@@ -1,0 +1,63 @@
+export const fixture = "storage";
+export const title = "Inside one tuple";
+
+# Inside one tuple
+
+<Diagram cols={12} rows={2.6}>
+  <Box id="h" x={0} y={0.7} w={3.4} label="header" sub="23 bytes" appearAt={1} tone="accent" />
+  <Box id="n" x={3.6} y={0.7} w={2} label="null bitmap" sub="if any NULL" appearAt={2} />
+  <Box id="p" x={5.8} y={0.7} w={1.6} label="pad" sub="to 8" appearAt={3} tone="warn" />
+  <Box id="d" x={7.6} y={0.7} w={4.4} label="the column values" sub="in attnum order" appearAt={4} />
+
+  <Label x={1.7} y={2.2} text="xmin  xmax  t_ctid  infomask" appearAt={1} />
+</Diagram>
+
+<Note appearAt={1} hideAt={2}>
+
+**23 bytes before any of your data.** `xmin` — the transaction that created
+this version. `xmax` — the transaction that ended it, or 0. `t_ctid` — where
+the next version is. Plus flag bits.
+
+Two of those three are the whole of session 4.
+
+</Note>
+
+<Note appearAt={2} hideAt={3}>
+
+**One bit per column, but only if the row has a NULL.** A row with no NULLs
+carries no bitmap at all, so a nullable column costs nothing until it is used.
+
+</Note>
+
+<Note appearAt={3} hideAt={4}>
+
+**Alignment padding, and it is free to avoid.** The data starts on an 8-byte
+boundary, and each column is aligned to its own type's requirement.
+
+`int, bigint, int` wastes 4 bytes per row that `bigint, int, int` does not.
+On a 500 million row table that is 2 GB of nothing.
+
+</Note>
+
+<Note appearAt={4}>
+
+**Then the values, in `attnum` order** — the order the columns were declared,
+not the order you selected them. Variable-length values carry their own length
+header; a short `text` costs 1 byte plus its characters.
+
+</Note>
+
+<Runnable
+  appearAt={5}
+  hideAt={6}
+  sql={`SELECT lp, lp_off, lp_len, t_xmin, t_xmax, t_ctid
+FROM heap_page_items(get_raw_page('order_items', 0))
+LIMIT 4;`}
+/>
+
+<Runnable
+  appearAt={6}
+  sql={`SELECT t_xmin, t_xmax, heap_tuple_infomask_flags(t_infomask, t_infomask2)
+FROM heap_page_items(get_raw_page('order_items', 0))
+LIMIT 2;`}
+/>

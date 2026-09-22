@@ -1,0 +1,11 @@
+export const fixture = "orders";
+export const title = "ANALYZE adds the truth";
+
+# `ANALYZE` adds the truth
+
+`EXPLAIN ANALYZE` runs the query and reports both numbers: what the planner
+predicted, and what actually happened.
+
+<Runnable appearAt={1} sql="SET max_parallel_workers_per_gather = 0;" />
+
+<Plan analyze sql="SELECT count(*) FROM orders;" appearAt={2} />

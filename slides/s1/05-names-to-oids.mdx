@@ -1,0 +1,28 @@
+export const fixture = "orders";
+export const title = "Names become numbers";
+
+# Names become numbers
+
+The analyzer resolves every name against the catalog. After it runs, nothing in
+the query is a string any more.
+
+<Morph
+  steps={[
+    { at: 0, sql: `SELECT email FROM customers WHERE id = 7;` },
+    {
+      at: 1,
+      sql: `-- the query tree, sketched: not SQL
+SELECT Var(rel 1, attno 3, type 25)
+FROM   RangeTblEntry(relid 70445797)
+WHERE  OpExpr(opno 96, Var(rel 1, attno 1, type 23), Const(7, type 23));`,
+    },
+  ]}
+/>
+
+<Runnable
+  appearAt={2}
+  sql={`SELECT attrelid, attname, attnum, atttypid, atttypid::regtype AS type
+FROM pg_attribute
+WHERE attrelid = 'customers'::regclass AND attnum > 0
+ORDER BY attnum;`}
+/>

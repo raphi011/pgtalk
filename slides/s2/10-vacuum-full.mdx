@@ -1,0 +1,51 @@
+export const fixture = "bloat";
+export const title = "VACUUM FULL takes the lock";
+
+# `VACUUM FULL` takes the lock
+
+<Runnable appearAt={1} hideAt={4} name="before" sql="SELECT pg_size_pretty(pg_relation_size('orders')) AS file;" />
+
+<Note appearAt={2} hideAt={3}>
+
+`VACUUM FULL` rewrites the table into a new file, leaving out the dead
+tuples. It is the only thing here that returns disk to the operating system —
+and it needs an `ACCESS EXCLUSIVE` lock to do it.
+
+One reader is enough to stop it.
+
+</Note>
+
+<Runnable
+  appearAt={3}
+  hideAt={7}
+  session="s2"
+  sql={`BEGIN;
+SELECT count(*) FROM orders WHERE id = 1;`}
+/>
+
+<Runnable appearAt={4} hideAt={7} sql="VACUUM FULL orders;" />
+
+<Note appearAt={5} hideAt={6}>
+
+**Blocked**, behind a transaction that has read one row and gone quiet. And
+every query arriving after it queues behind the `VACUUM FULL` — a lock request
+is not overtaken.
+
+That is the failure mode: not the rewrite, the queue in front of it.
+
+</Note>
+
+<Runnable appearAt={6} hideAt={7} session="s2" sql="COMMIT;" />
+
+<Runnable appearAt={7} against="before" sql="SELECT pg_size_pretty(pg_relation_size('orders')) AS file;" />
+
+<Note appearAt={8}>
+
+**29 MB — a new file, and a new `relfilenode`.** Every `ctid` in the table
+changed, so every index was rebuilt too, and the rewrite needed room for both
+copies at once.
+
+For a production table: `pg_repack`, which does the same work without holding
+the lock.
+
+</Note>

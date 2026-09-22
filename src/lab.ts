@@ -14,14 +14,20 @@ export interface BlockOutput {
   notices?: string[];
   error?: QueryError;
   durationMs: number;
+  /** When the answer arrived, so a re-run replaces the panel rather than patching it. */
+  at: number;
 }
 
 interface LabState {
   connected: boolean;
   fatal?: string;
-  sessions: Record<SessionName, { state: SessionState; pid?: number; waiting?: string }>;
+  sessions: Record<
+    SessionName,
+    { state: SessionState; pid?: number; waiting?: string; blockedBy?: string[] }
+  >;
   blocks: Record<string, BlockOutput>;
-  pending: Record<string, SessionName>;
+  /** Blocks awaiting an answer, and when they were sent. */
+  pending: Record<string, { session: SessionName; startedAt: number }>;
 }
 
 let state: LabState = { connected: false, sessions: {}, blocks: {}, pending: {} };
@@ -36,7 +42,8 @@ function set(next: Partial<LabState>) {
 function connect() {
   if (socket) return;
   socket = new WebSocket(`ws://${location.host}/lab`);
-  socket.onopen = () => set({ connected: true });
+  // A fatal is about the connection it arrived on; a fresh one starts clean.
+  socket.onopen = () => set({ connected: true, fatal: undefined });
   socket.onclose = () => {
     set({ connected: false });
     socket = null;
@@ -51,7 +58,12 @@ function apply(msg: ServerMessage) {
       set({
         sessions: {
           ...state.sessions,
-          [msg.session]: { state: msg.state, pid: msg.pid, waiting: msg.waiting },
+          [msg.session]: {
+            state: msg.state,
+            pid: msg.pid,
+            waiting: msg.waiting,
+            blockedBy: msg.blockedBy,
+          },
         },
       });
       break;
@@ -65,6 +77,7 @@ function apply(msg: ServerMessage) {
           [msg.blockId]: {
             session: msg.session,
             durationMs: msg.durationMs,
+            at: performance.now(),
             ...(msg.type === "result"
               ? { results: msg.results, notices: msg.notices }
               : { error: msg.error }),
@@ -74,7 +87,9 @@ function apply(msg: ServerMessage) {
       break;
     }
     case "restored":
-      set({ blocks: {}, pending: {} });
+      // A restore that completed proves the server can reach the database, so
+      // an earlier fatal no longer describes the deck.
+      set({ blocks: {}, pending: {}, fatal: undefined });
       break;
     case "fatal":
       set({ fatal: msg.message });
@@ -93,7 +108,7 @@ function send(msg: ClientMessage) {
 
 export const lab = {
   run(blockId: string, session: SessionName, sql: string) {
-    set({ pending: { ...state.pending, [blockId]: session } });
+    set({ pending: { ...state.pending, [blockId]: { session, startedAt: performance.now() } } });
     send({ type: "run", blockId, session, sql });
   },
   cancel(session: SessionName) {

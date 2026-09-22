@@ -1,0 +1,13 @@
+export const fixture = "orders";
+export const title = "When the guess is wrong";
+
+# When the guess is wrong
+
+<Runnable appearAt={1} sql="SET max_parallel_workers_per_gather = 0;" />
+
+The planner has statistics on `id`. It has none on `id % 7`, so it falls back
+to a fixed guess for expressions it cannot see through.
+
+<Predict appearAt={2}>One row in seven matches. What fraction will the planner assume?</Predict>
+
+<Plan analyze sql="SELECT count(*) FROM orders WHERE id % 7 = 0;" appearAt={2} />

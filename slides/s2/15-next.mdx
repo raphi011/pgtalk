@@ -1,0 +1,19 @@
+export const fixture = "storage";
+export const title = "What this buys you";
+
+# What this buys you
+
+<Diagram cols={12} rows={4}>
+  <Box id="s3" x={0.4} y={0.6} w={3.4} label="Session 3" sub="indexes point at ctids" appearAt={1} />
+  <Box id="s4" x={4.3} y={0.6} w={3.4} label="Session 4" sub="xmin, xmax, snapshots" appearAt={2} />
+  <Box id="s5" x={8.2} y={0.6} w={3.4} label="Session 5" sub="locks, and who holds them" appearAt={3} />
+
+  <Label x={6} y={2.6} text="a row version is an address, a pair of transaction ids, and some bytes" appearAt={4} />
+</Diagram>
+
+<Note appearAt={5}>
+
+**On Monday:** find your most-updated table, compare `n_dead_tup` to
+`n_live_tup`, and look for a transaction older than a minute.
+
+</Note>

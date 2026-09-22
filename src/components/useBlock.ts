@@ -15,30 +15,57 @@ export function useBlock({
   session,
   sql: initial,
   appearAt = 0,
+  hideAt,
+  name,
+  against,
   wrap = (s: string) => s,
 }: {
   session: string;
   sql: string;
   appearAt?: number;
+  hideAt?: number;
+  /** How a later block on the same slide refers to this one. */
+  name?: string;
+  /** A named block whose answer this one is shown against. */
+  against?: string;
   wrap?: (sql: string) => string;
 }) {
   const id = useId();
   const state = useLab();
   const [sql, setSql] = useState(initial);
   const [editing, setEditing] = useState(false);
-  const appeared = useAppeared(appearAt);
-  const { register } = useRegistry();
+  const appeared = useAppeared(appearAt, hideAt);
+  const { register, didRun, names } = useRegistry();
+
+  // Registered for as long as the block is mounted, which is as long as its
+  // slide is: a hidden block keeps its hooks, so it can still be compared to.
+  useEffect(() => {
+    if (!name) return;
+    names.set(name, id);
+    return () => {
+      if (names.get(name) === id) names.delete(name);
+    };
+  }, [name, id, names]);
 
   // The keyboard runs the current text, not the text captured at registration.
   const latest = useRef({ sql, session, wrap });
   latest.current = { sql, session, wrap };
 
-  const run = () => lab.run(id, latest.current.session, latest.current.wrap(latest.current.sql));
+  const run = () => {
+    didRun(id);
+    lab.run(id, latest.current.session, latest.current.wrap(latest.current.sql));
+  };
+
+  // Registered through a ref so the keyboard and the button are the same path:
+  // a block run by either is a block the deck knows has run.
+  const latestRun = useRef(run);
+  latestRun.current = run;
 
   useEffect(() => {
     if (!appeared) return;
     return register({
-      run: () => lab.run(id, latest.current.session, latest.current.wrap(latest.current.sql)),
+      id,
+      run: () => latestRun.current(),
       toggleEdit: () => setEditing((e) => !e),
     });
   }, [id, register, appeared]);
@@ -55,7 +82,10 @@ export function useBlock({
     run,
     status,
     waiting: state.sessions[session]?.waiting,
+    blockedBy: state.sessions[session]?.blockedBy,
     running: state.pending[id] !== undefined,
+    startedAt: state.pending[id]?.startedAt,
     output: state.blocks[id],
+    baseline: against ? state.blocks[names.get(against) ?? ""] : undefined,
   };
 }

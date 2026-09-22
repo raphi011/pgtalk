@@ -21,7 +21,13 @@ export interface Rect {
   h: number;
 }
 
-const Geometry = createContext<Map<string, Rect>>(new Map());
+interface Layout {
+  boxes: Map<string, Rect>;
+  /** Where each arrow's head lands, keyed `from->to`. */
+  heads: Map<string, [number, number]>;
+}
+
+const Geometry = createContext<Layout>({ boxes: new Map(), heads: new Map() });
 
 const rectOf = (p: BoxProps): Rect => ({
   x: p.x * CELL + GAP / 2,
@@ -30,18 +36,51 @@ const rectOf = (p: BoxProps): Rect => ({
   h: (p.h ?? 1) * CELL - GAP,
 });
 
+type Ends = { from: string; to: string };
+
 /**
- * Collect every <Box> in the tree before rendering, so <Arrow> can reference a
- * box declared after it. Walking the children is what keeps the DSL free of
- * authoring order rules.
+ * Collect every <Box> and <Arrow> in the tree before rendering, so <Arrow> can
+ * reference a box declared after it, and so arrows sharing a target can be
+ * told apart. Walking the children is what keeps the DSL free of authoring
+ * order rules.
  */
-function collect(children: ReactNode, into: Map<string, Rect>) {
+function collect(children: ReactNode, boxes: Map<string, Rect>, arrows: Ends[]) {
   Children.forEach(children, (child) => {
     if (!isValidElement(child)) return;
     const props = child.props as { id?: string; children?: ReactNode };
-    if (child.type === Box && props.id) into.set(props.id, rectOf(child.props as BoxProps));
-    if (props.children) collect(props.children, into);
+    if (child.type === Box && props.id) boxes.set(props.id, rectOf(child.props as BoxProps));
+    if (child.type === Arrow) arrows.push(child.props as Ends);
+    if (props.children) collect(props.children, boxes, arrows);
   });
+}
+
+/**
+ * Arrows landing on the same side of a box get their own points along it, at
+ * 1/(n+1), 2/(n+1) ... in the order of their sources, so the heads do not
+ * pile into one shape and the lines do not cross. Every arrow in the diagram
+ * counts, shown yet or not: one appearing later never moves one already on
+ * screen. Tails are left to share a point, since a fan-out reads fine.
+ */
+function place(boxes: Map<string, Rect>, arrows: Ends[]) {
+  const groups = new Map<string, { key: string; box: Rect; side: Side; source: Rect }[]>();
+  for (const { from, to } of arrows) {
+    const a = boxes.get(from);
+    const b = boxes.get(to);
+    if (!a || !b) continue;
+    const side = facing(b, a);
+    const group = groups.get(`${to}:${side}`) ?? [];
+    group.push({ key: `${from}->${to}`, box: b, side, source: a });
+    groups.set(`${to}:${side}`, group);
+  }
+
+  const heads = new Map<string, [number, number]>();
+  for (const group of groups.values()) {
+    const across = (r: Rect) =>
+      group[0].side === "left" || group[0].side === "right" ? r.y + r.h / 2 : r.x + r.w / 2;
+    group.sort((p, q) => across(p.source) - across(q.source));
+    group.forEach((g, i) => heads.set(g.key, point(g.box, g.side, (i + 1) / (group.length + 1))));
+  }
+  return heads;
 }
 
 export function Diagram({
@@ -53,11 +92,12 @@ export function Diagram({
   rows?: number;
   children: ReactNode;
 }) {
-  const geometry = new Map<string, Rect>();
-  collect(children, geometry);
+  const boxes = new Map<string, Rect>();
+  const arrows: Ends[] = [];
+  collect(children, boxes, arrows);
 
   return (
-    <Geometry.Provider value={geometry}>
+    <Geometry.Provider value={{ boxes, heads: place(boxes, arrows) }}>
       <svg className="diagram" viewBox={`0 0 ${cols * CELL} ${rows * CELL}`}>
         <defs>
           <marker id="arrowhead" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
@@ -103,39 +143,61 @@ export function Box(props: BoxProps) {
   );
 }
 
-/** Anchor on the side of `a` that faces `b`. */
-function anchor(a: Rect, b: Rect): [number, number] {
-  const ac = [a.x + a.w / 2, a.y + a.h / 2];
-  const bc = [b.x + b.w / 2, b.y + b.h / 2];
-  const dx = bc[0] - ac[0];
-  const dy = bc[1] - ac[1];
-  if (Math.abs(dx) > Math.abs(dy)) {
-    return [dx > 0 ? a.x + a.w : a.x, ac[1]];
-  }
-  return [ac[0], dy > 0 ? a.y + a.h : a.y];
+type Side = "left" | "right" | "top" | "bottom";
+
+/** The side of `a` that faces `b`. */
+function facing(a: Rect, b: Rect): Side {
+  const dx = b.x + b.w / 2 - (a.x + a.w / 2);
+  const dy = b.y + b.h / 2 - (a.y + a.h / 2);
+  if (Math.abs(dx) > Math.abs(dy)) return dx > 0 ? "right" : "left";
+  return dy > 0 ? "bottom" : "top";
 }
 
+/** A point `t` of the way along one side of `a`. */
+function point(a: Rect, side: Side, t = 0.5): [number, number] {
+  switch (side) {
+    case "left":
+      return [a.x, a.y + a.h * t];
+    case "right":
+      return [a.x + a.w, a.y + a.h * t];
+    case "top":
+      return [a.x + a.w * t, a.y];
+    case "bottom":
+      return [a.x + a.w * t, a.y + a.h];
+  }
+}
+
+/**
+ * An arrow draws itself from `from` to `to` as it appears. `pulse` sends a dot
+ * along it from `pulseAt` on — `"back"` runs against the arrow, which is how a
+ * row travels up a tree whose arrows are requests travelling down (A3b).
+ */
 export function Arrow({
   from,
   to,
   label,
   appearAt = 0,
   hideAt,
+  pulse,
+  pulseAt = appearAt,
 }: {
   from: string;
   to: string;
   label?: string;
   appearAt?: number;
   hideAt?: number;
+  pulse?: "forward" | "back";
+  pulseAt?: number;
 }) {
-  const geometry = useContext(Geometry);
+  const { boxes, heads } = useContext(Geometry);
   const appeared = useAppeared(appearAt, hideAt);
-  const a = geometry.get(from);
-  const b = geometry.get(to);
+  const pulsing = useAppeared(pulseAt, hideAt) && pulse !== undefined;
+  const a = boxes.get(from);
+  const b = boxes.get(to);
   if (!a || !b) return null;
 
-  const [x1, y1] = anchor(a, b);
-  const [x2, y2] = anchor(b, a);
+  const [x1, y1] = point(a, facing(a, b));
+  const [x2, y2] = heads.get(`${from}->${to}`) ?? point(b, facing(b, a));
 
   // Offset the label off the line rather than onto it: a vertical arrow would
   // otherwise strike straight through its own text.
@@ -145,7 +207,16 @@ export function Arrow({
 
   return (
     <g className={`appear ${appeared ? "in" : ""} arrow`}>
-      <line x1={x1} y1={y1} x2={x2} y2={y2} markerEnd="url(#arrowhead)" />
+      <line x1={x1} y1={y1} x2={x2} y2={y2} pathLength={1} markerEnd="url(#arrowhead)" />
+      {pulsing ? (
+        <circle className="pulse" r={8}>
+          <animateMotion
+            dur="1.2s"
+            repeatCount="indefinite"
+            path={pulse === "back" ? `M${x2},${y2} L${x1},${y1}` : `M${x1},${y1} L${x2},${y2}`}
+          />
+        </circle>
+      ) : null}
       {label ? (
         <text x={lx} y={ly} textAnchor={vertical ? "start" : "middle"}>
           {label}
@@ -190,9 +261,9 @@ export function Highlight({
   appearAt?: number;
   hideAt?: number;
 }) {
-  const geometry = useContext(Geometry);
+  const { boxes } = useContext(Geometry);
   const appeared = useAppeared(appearAt, hideAt);
-  const r = geometry.get(target);
+  const r = boxes.get(target);
   if (!r) return null;
   return (
     <g className={`appear ${appeared ? "in" : ""} highlight`}>

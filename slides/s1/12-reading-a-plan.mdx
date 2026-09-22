@@ -1,0 +1,9 @@
+export const title = "Reading a plan in thirty seconds";
+
+# Reading a plan in thirty seconds
+
+1. Read **innermost first** — the tree runs bottom-up.
+2. Find the biggest gap between **rows estimated and actual**. That node is
+   where the plan went wrong, not the slowest one.
+3. **Actual time is per loop.** Multiply before believing it.
+4. **`read` means disk, `hit` means memory.**

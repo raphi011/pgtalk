@@ -3,19 +3,30 @@
 
 demo    := "pgtalk_demo"
 fixture := "pgtalk_fix_orders"
+storage := "pgtalk_fix_storage"
+bloat   := "pgtalk_fix_bloat"
 
 default:
     @just --list
 
-# Build the fixture template database from schema + seed, then the demo database.
-bootstrap: _build-fixture reset
+# Build every fixture template from schema + seed, then the demo database.
+bootstrap: _build-fixtures reset
     @echo "bootstrap complete"
 
-_build-fixture:
-    dropdb --if-exists {{fixture}}
+# Fixtures beyond `orders` are built by copying the one before them rather
+# than by re-running the seed: a template copy takes under a second, and the
+# seed takes tens.
+_build-fixtures:
+    dropdb --if-exists --force {{fixture}}
     createdb {{fixture}}
     psql -q -v ON_ERROR_STOP=1 -d {{fixture}} -f db/schema.sql
     psql -q -v ON_ERROR_STOP=1 -d {{fixture}} -f db/seed.sql
+    dropdb --if-exists --force {{storage}}
+    createdb --template={{fixture}} {{storage}}
+    psql -q -v ON_ERROR_STOP=1 -d {{storage}} -f db/fixtures/storage.sql
+    dropdb --if-exists --force {{bloat}}
+    createdb --template={{storage}} {{bloat}}
+    psql -q -v ON_ERROR_STOP=1 -d {{bloat}} -f db/fixtures/bloat.sql
 
 # Restore the demo database from the fixture template (E4).
 reset:
