@@ -118,12 +118,16 @@ export function Plan({
   analyze?: boolean;
   appearAt?: number;
 }) {
-  const options = ["FORMAT JSON", ...(analyze ? ["ANALYZE", "BUFFERS"] : [])].join(", ");
+  // Shown: what a listener would type in psql to get this. Sent: the same
+  // thing plus FORMAT JSON, which is what the tree below is parsed from and
+  // which by hand would only produce unreadable JSON.
+  const shown = analyze ? "EXPLAIN (ANALYZE, BUFFERS)" : "EXPLAIN";
+  const sent = ["FORMAT JSON", ...(analyze ? ["ANALYZE", "BUFFERS"] : [])].join(", ");
   const block = useBlock({
     session,
     sql,
     appearAt,
-    wrap: (s) => `EXPLAIN (${options}) ${s}`,
+    wrap: (s) => `EXPLAIN (${sent}) ${s}`,
   });
   if (!block.appeared) return null;
 
@@ -131,7 +135,7 @@ export function Plan({
   const roots: PlanRoot[] | null = raw ? JSON.parse(raw) : null;
 
   return (
-    <BlockFrame session={session} block={block}>
+    <BlockFrame session={session} block={block} prefix={shown}>
       {block.output?.error ? (
         <div className="panel error">
           <div className="error-line">ERROR:  {block.output.error.message}</div>
@@ -148,6 +152,7 @@ export function Plan({
               <span>execution {roots[0]["Execution Time"].toFixed(2)} ms</span>
             ) : null}
             {!analyze ? <span className="estimate-only">estimates only</span> : null}
+            <span>tree rendered from FORMAT JSON</span>
           </div>
         </div>
       ) : null}

@@ -20,10 +20,12 @@ const STATE_LABEL: Record<SessionState, string> = {
 export function BlockFrame({
   session,
   block,
+  prefix,
   children,
 }: {
   session: string;
   block: ReturnType<typeof useBlock>;
+  prefix?: string;
   children: ReactNode;
 }) {
   const paired = useContext(Paired);
@@ -46,7 +48,7 @@ export function BlockFrame({
           run
         </button>
       </div>
-      <Sql sql={block.sql} editing={block.editing} onChange={block.setSql} />
+      <Sql sql={block.sql} prefix={prefix} editing={block.editing} onChange={block.setSql} />
       {children}
     </div>
   );

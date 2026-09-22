@@ -152,3 +152,6 @@ button.run { background: #238636; border-color: #2ea043; }
 .plan-totals .estimate-only { color: var(--warn); }
 
 .code text { font-family: var(--mono); }
+
+.sql-prefix pre { padding-bottom: 0; opacity: 0.65; }
+.sql-prefix + .sql pre, .sql-prefix + .sql-edit { padding-top: 0.2rem; }

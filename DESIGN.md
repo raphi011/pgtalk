@@ -159,10 +159,18 @@ borders are familiar but spend horizontal space that font size needs.
 Highlighting is what makes SQL legible from the back row; editing happens on
 perhaps one slide in twenty.
 
-**A6. `EXPLAIN` renders as a tree** from `EXPLAIN (FORMAT JSON)`: nested nodes,
+**A6. `EXPLAIN` renders as a tree, and says so** from `EXPLAIN (FORMAT JSON)`: nested nodes,
 costs and row estimates, actual-versus-estimated marked when the plan came from
 `ANALYZE`. The largest single build item, and it carries two of the five
 sessions. Text plans are unreadable past about six lines on a projector.
+
+The block shows `EXPLAIN (ANALYZE, BUFFERS)` above the query and sends that
+plus `FORMAT JSON`. Hiding the command entirely was the first version and it
+was wrong: a listener could not reproduce what they had just watched, on a
+slide whose subject was that command. Showing the literal text sent would be
+worse, because nobody types `FORMAT JSON` by hand — it yields unreadable JSON
+rather than this tree. So the pane shows the reproducible form and the panel
+footer names the difference.
 
 ## Conventions
 
