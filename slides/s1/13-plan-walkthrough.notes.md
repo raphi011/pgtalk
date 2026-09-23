@@ -5,14 +5,16 @@ This is the rehearsal for doing it alone.
 
 ## Why parallelism is off
 
-`SET max_parallel_workers_per_gather = 0` again. With it on, the planner puts a
-`Gather` or `Gather Merge` and three workers between the audience and the join,
-and `loops` on the worker side means something different from the meaning they
-just learned. That is a genuine second lesson and it is not today's.
+The deck's sessions run with `max_parallel_workers_per_gather = 0` (design
+decision E6). With it on, the planner puts a `Gather` or `Gather Merge` and
+three workers between the audience and the join, and `loops` on the worker side
+means something different from the meaning they just learned. That is a genuine
+second lesson and it is not today's.
 
-If someone asks what it would look like, re-run without the `SET` at the end —
-the deck can do it live and the contrast is instructive, as long as it lands
-after the four questions rather than during them.
+If someone asks what it would look like, run `SET
+max_parallel_workers_per_gather = 2;` from the editor and re-run the plan — the
+contrast is instructive, as long as it lands after the four questions rather
+than during them.
 
 ## The query
 
@@ -76,6 +78,6 @@ does not fit.
 ## If it goes wrong live
 
 If the plan comes back with a different shape — a merge join, or a parallel
-plan because the `SET` did not take — treat it as material rather than as a
-failure. Walk the same four questions over whatever appeared; the procedure is
+plan because the session setting did not take — treat it as material rather
+than as a failure. Walk the same four questions over whatever appeared; the procedure is
 the point, not the specific tree.

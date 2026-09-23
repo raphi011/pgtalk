@@ -3,16 +3,14 @@ export const title = "The four questions on a real plan";
 
 # The four questions on a real plan
 
-<Runnable appearAt={1} hideAt={2} sql="SET max_parallel_workers_per_gather = 0;" />
-
 <Plan
   analyze
-  appearAt={2}
+  appearAt={1}
   focus={[
-    { at: 3, until: 4, node: "Seq Scan" },
-    { at: 4, until: 5, metric: "rows" },
-    { at: 5, until: 6, metric: "loops" },
-    { at: 6, metric: "buffers" },
+    { at: 2, until: 3, node: "Seq Scan" },
+    { at: 3, until: 4, metric: "rows" },
+    { at: 4, until: 5, metric: "loops" },
+    { at: 5, metric: "buffers" },
   ]}
   sql={`SELECT c.country, count(*)
 FROM customers c JOIN orders o ON o.customer_id = c.id
@@ -20,7 +18,7 @@ WHERE o.total_cents > 200000
 GROUP BY c.country;`}
 />
 
-<Note appearAt={3} hideAt={4}>
+<Note appearAt={2} hideAt={3}>
 
 **1 · Innermost first.** The two scans at the bottom are the only nodes that
 touch a table. Read upwards as one sentence: scan both, hash `customers`, join,
@@ -28,7 +26,7 @@ count per country.
 
 </Note>
 
-<Note appearAt={4} hideAt={5}>
+<Note appearAt={3} hideAt={4}>
 
 **2 · Estimate against actual.** Every node is within a few percent.
 `total_cents` has an ordinary histogram, so the planner read the filter's
@@ -36,14 +34,14 @@ selectivity straight off it. This plan was decided correctly.
 
 </Note>
 
-<Note appearAt={5} hideAt={6}>
+<Note appearAt={4} hideAt={5}>
 
 **3 · Loops.** Every node ran once, so every time is already a total. Check
 it anyway, every time, including when the answer is 1.
 
 </Note>
 
-<Note appearAt={6}>
+<Note appearAt={5}>
 
 **4 · Buffers.** `hit` came from shared buffers; `read` came from outside
 them. Run it again and the reads turn into hits: same tree, a different

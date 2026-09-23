@@ -211,6 +211,17 @@ scan differ visibly on the clock, small enough to restore instantly from a
 template. A shared schema means session 3's index lands on a table the audience
 already understands from session 2.
 
+**E6. Sessions connect with parallel query off.** Every session starts with
+`max_parallel_workers_per_gather = 0`, passed as a connection option. With it
+on, the planner puts a `Gather` and its workers into plans that the talk reads
+node by node: a parallel scan's cost no longer matches the arithmetic slide,
+and `loops` on the worker side means something other than what the audience
+just learned. Parallelism is in none of the five sessions, so it is off for
+all of them. A `SET` on each slide that needed it was rejected: it spent a key
+press and screen space on something the audience should not have to think
+about. A presenter who wants the contrast runs `SET
+max_parallel_workers_per_gather = 2` from the editor.
+
 ## Authoring
 
 **A1. Slides are MDX.** Fixture in frontmatter, SQL inline:

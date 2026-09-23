@@ -93,6 +93,8 @@ export class Lab {
       const client = new pg.Client({
         database: DEMO_DB,
         application_name: `pgtalk:${name}`,
+        // Plans the talk reads node by node carry no Gather (E6).
+        options: "-c max_parallel_workers_per_gather=0",
         types: textOnly,
       });
       client.on("error", () => this.setState(s!, "failed"));

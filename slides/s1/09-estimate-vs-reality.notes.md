@@ -5,15 +5,6 @@ happens to be right. Showing a correct plan first matters: it establishes what
 "agreement" looks like, so the disagreement on the next slide is visible as an
 anomaly rather than as the normal state of things.
 
-## Why the `SET` is here again
-
-Every slide change drops the session connections (design decision E4), so the
-`SET max_parallel_workers_per_gather = 0` from the previous slide is gone. That
-is deliberate — it makes walking into this slide and jumping straight to it
-produce the same database and the same plan. If you are asked, this is worth
-saying out loud, because it is the same property that lets you take a question
-that sends you back three slides and return without anything being poisoned.
-
 ## Reading the node now
 
 ```

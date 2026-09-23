@@ -85,13 +85,13 @@ send({ type: "reset-sessions" });
 const abandoned = await until((m) => m.blockId === "slow");
 check("a reset reports the statement it interrupted", abandoned.type === "error", abandoned.error?.message);
 
-send({ type: "run", blockId: "g", session: "s1", sql: "SET max_parallel_workers_per_gather = 0;" });
+send({ type: "run", blockId: "g", session: "s1", sql: "SET max_parallel_workers_per_gather = 2;" });
 await until((m) => m.blockId === "g");
 send({ type: "reset-sessions" });
 await until((m) => m.type === "state" && m.session === "s1" && m.state === "disconnected");
 send({ type: "run", blockId: "h", session: "s1", sql: "SHOW max_parallel_workers_per_gather;" });
 const h = await until((m) => m.blockId === "h");
-check("a slide change drops session-local SET", h.results?.[0]?.rows?.[0]?.[0] !== "0", JSON.stringify(h.results?.[0]?.rows));
+check("a slide change drops session-local SET, back to parallel query off", h.results?.[0]?.rows?.[0]?.[0] === "0", JSON.stringify(h.results?.[0]?.rows));
 
 send({ type: "run", blockId: "f", session: "s1", sql: "SELECT status FROM orders WHERE id = 1;" });
 const f = await until((m) => m.blockId === "f");

@@ -75,6 +75,6 @@ a table is a strong signal that the planner is guessing blind.
 
 ## The question on the slide
 
-Key 2 shows the question with the plan. Ask for the fraction before running it. The room will reason from the data —
+Key 1 shows the question with the plan. Ask for the fraction before running it. The room will reason from the data —
 "one in seven, so 14%" — which is exactly the reasoning the planner cannot do,
 and that is what makes the reveal land.

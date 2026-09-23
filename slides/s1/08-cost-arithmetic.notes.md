@@ -11,11 +11,7 @@ being a slogan and becomes a mechanism.
    of what the planner knows about the table's size. Note that `reltuples` is a
    float and an estimate, updated by `VACUUM` and `ANALYZE`, not a live count.
    It can be wrong; after a bulk load it is usually very wrong.
-2. **Key 2** — `SET max_parallel_workers_per_gather = 0`. Without this the
-   planner may choose a parallel sequential scan, whose cost is divided across
-   workers and no longer matches the formula. Parallelism is a genuine subject
-   and it is not this slide's subject.
-3. **Key 3** — the prompt and the plan, not yet run. Let the room work the
+2. **Key 2** — the prompt and the plan, not yet run. Let the room work the
    cost out, then Enter.
 
 ## The arithmetic
