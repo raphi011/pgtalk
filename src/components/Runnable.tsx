@@ -66,9 +66,11 @@ export function BlockFrame({
         {block.running && block.startedAt !== undefined ? <Elapsed since={block.startedAt} /> : null}
         <span className="spacer" />
         {actions}
-        <button onClick={() => block.setEditing((e) => !e)}>
-          {block.editing ? "done" : "edit"}
-        </button>
+        {block.editable ? (
+          <button onClick={() => block.setEditing((e) => !e)}>
+            {block.editing ? "done" : "edit"}
+          </button>
+        ) : null}
         {block.status === "blocked" || block.running ? (
           <button onClick={() => lab.cancel(session)}>cancel</button>
         ) : null}

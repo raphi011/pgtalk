@@ -5,6 +5,12 @@ import { useAppeared } from "./Step.js";
 import type { SessionState } from "../../server/protocol.js";
 
 /**
+ * Whether blocks can be edited in place (A5b). Off while questions from the
+ * floor go to the REPL; the editing path stays so it can be switched back on.
+ */
+const EDITABLE = false;
+
+/**
  * Everything a runnable block needs: its own output, its session's state, and
  * a keyboard registration that is live only while the block is visible.
  *
@@ -66,7 +72,9 @@ export function useBlock({
     return register({
       id,
       run: () => latestRun.current(),
-      toggleEdit: () => setEditing((e) => !e),
+      toggleEdit: () => {
+        if (EDITABLE) setEditing((e) => !e);
+      },
     });
   }, [id, register, appeared]);
 
@@ -77,6 +85,7 @@ export function useBlock({
     appeared,
     sql,
     setSql,
+    editable: EDITABLE,
     editing,
     setEditing,
     run,

@@ -313,6 +313,12 @@ because `int4` columns here are identifiers such as pids, not quantities.
 Highlighting is what makes SQL legible from the back row; editing happens on
 perhaps one slide in twenty.
 
+**A5b. Editing is switched off for now** by `EDITABLE` in
+`src/components/useBlock.ts`: no edit button, and `e` does nothing. Questions
+from the floor go to the REPL (`` ` ``), which takes any SQL without disturbing
+the slide's block. The editing path is kept rather than removed so a later
+slide can want it back.
+
 **A5a. `<Morph>` for one statement becoming another form of itself.** Stepped,
 read-only SQL that animates token by token between texts (via
 `@shikijs/magic-move`), for slides where a cut would lose which part became
