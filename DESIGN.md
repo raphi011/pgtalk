@@ -137,8 +137,9 @@ The loss is backslash meta-commands. `\timing` is measured on our side; `\d`
 becomes a catalog query if a slide ever needs it.
 
 **S4. The locally installed PostgreSQL** (18.6 via Homebrew at the time of
-writing), not a container. `just bootstrap` creates the role, databases and
-templates; `just seed` loads the dataset; `just dev` runs the deck; `just
+writing), not a container. `just setup` installs and starts it through
+Homebrew, whose `initdb` creates a superuser role named after the current user;
+`just bootstrap` creates the databases and templates; `just seed` loads the dataset; `just dev` runs the deck; `just
 reset` rebuilds the templates; `just psql` opens a shell on the demo database.
 
 ## Execution model

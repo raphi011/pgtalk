@@ -5,9 +5,18 @@ demo    := "pgtalk_demo"
 fixture := "pgtalk_fix_orders"
 storage := "pgtalk_fix_storage"
 bloat   := "pgtalk_fix_bloat"
+pg      := "postgresql@18"
 
 default:
     @just --list
+
+# One-time machine setup: PostgreSQL via Homebrew (S4), dependencies, fixtures.
+# Safe to re-run: each step skips what is already in place.
+setup:
+    command -v pg_isready >/dev/null || brew install {{pg}}
+    brew services start {{pg}}
+    until pg_isready -q; do sleep 0.5; done
+    just install bootstrap
 
 # Build every fixture template from schema + seed, then the demo database.
 bootstrap: _build-fixtures reset
@@ -33,8 +42,14 @@ reset:
     dropdb --if-exists --force {{demo}}
     createdb --template={{fixture}} {{demo}}
 
-# Run the deck.
-dev:
+# Install dependencies exactly as the lockfile pins them.
+install:
+    pnpm install --frozen-lockfile
+
+# Run the deck. Installs first, so a fresh checkout starts without a separate
+# step; on an up-to-date checkout the install is a no-op.
+dev: install
+    @pg_isready -q || { echo "PostgreSQL is not running; run just setup"; exit 1; }
     pnpm dev
 
 # Open a psql shell on the demo database.

@@ -10,12 +10,11 @@ transactions and MVCC, concurrency in practice. Sessions 1 and 2 are written;
 
 ## Running it
 
-Needs a local PostgreSQL (18 at the time of writing), Node and
+Needs Homebrew (for PostgreSQL 18 at the time of writing), Node and
 [just](https://github.com/casey/just).
 
 ```sh
-pnpm install
-just bootstrap   # build the fixture template databases and the demo copy
+just setup       # install and start PostgreSQL, install dependencies, build the fixtures
 just dev         # http://127.0.0.1:5173
 ```
 
