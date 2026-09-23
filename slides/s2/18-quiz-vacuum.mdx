@@ -1,0 +1,35 @@
+export const fixture = "storage";
+export const title = "Quiz: VACUUM";
+
+# You `DELETE` every other row of a 1 GB table, then run `VACUUM`. How big is the file?
+
+<Choices revealAt={5}>
+  <Choice>About 0.5 GB</Choice>
+  <Choice correct>Still about 1 GB, with half of it reusable</Choice>
+  <Choice>1 GB until autovacuum runs, then 0.5 GB</Choice>
+  <Choice>Larger, because `VACUUM` writes a copy</Choice>
+</Choices>
+
+<Runnable
+  appearAt={2}
+  hideAt={5}
+  name="before"
+  sql={`DROP TABLE IF EXISTS events;
+CREATE TABLE events AS
+  SELECT g AS id, repeat('x', 100) AS payload FROM generate_series(1, 200000) g;
+SELECT count(*) AS rows, pg_size_pretty(pg_relation_size('events')) AS file FROM events;`}
+/>
+
+<Runnable appearAt={3} hideAt={5} sql="DELETE FROM events WHERE id % 2 = 0;" />
+
+<Runnable appearAt={4} hideAt={5} sql="VACUUM events;" />
+
+<Runnable appearAt={5} against="before" sql="SELECT count(*) AS rows, pg_size_pretty(pg_relation_size('events')) AS file FROM events;" />
+
+<Note appearAt={5}>
+
+**`VACUUM` makes space reusable, not returned.** Every page still holds live
+rows, so the file cannot shrink. Only `VACUUM FULL` rewrites it, under a lock
+that stops every reader.
+
+</Note>

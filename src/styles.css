@@ -131,6 +131,8 @@ button {
 button.run { background: #238636; border-color: #2ea043; }
 
 .sql pre { margin: 0; padding: 0.8rem; font-family: var(--mono); font-size: 0.95rem; }
+.query { max-width: 46em; margin: 1.2rem 0 0; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+.query pre { font-size: 1.15rem; }
 .sql-edit {
   width: 100%;
   border: none;
@@ -171,6 +173,7 @@ button.run { background: #238636; border-color: #2ea043; }
   letter-spacing: -0.02em;
   color: var(--heading);
 }
+.slide h1 .heading-sql { font-family: var(--mono); font-size: 0.92em; letter-spacing: 0; }
 .slide h2 { font-size: 1.3rem; margin: 0 0 1.5rem; font-weight: 400; color: var(--dim); }
 .slide p { max-width: 42em; }
 .deck.empty { color: var(--dim); padding: 2rem; }
@@ -281,6 +284,25 @@ button.run { background: #238636; border-color: #2ea043; }
 .predict strong { color: var(--heading); }
 .predict code { color: var(--accent); font-family: var(--mono); font-size: 0.92em; }
 .note code { color: var(--accent); font-family: var(--mono); font-size: 0.92em; }
+/* A quiz question's options (A3d): lettered, and dimmed but for the answer
+   once revealed. */
+.choices {
+  list-style: none; counter-reset: choice;
+  max-width: 46em; margin: 1.5rem 0 0; padding: 0;
+  animation: fade-in 260ms ease;
+}
+.choice {
+  counter-increment: choice;
+  display: flex; gap: 0.9rem; align-items: baseline;
+  margin: 0 0 0.6rem; padding: 0.45rem 0.9rem;
+  border: 1px solid var(--line); border-radius: 6px;
+  transition: opacity 260ms ease, border-color 260ms ease;
+}
+.choice::before { content: counter(choice, upper-alpha); color: var(--heading); font-weight: 700; }
+.choice code { color: var(--accent); font-family: var(--mono); font-size: 0.92em; }
+.choices.revealed .choice { opacity: 0.35; }
+.choices.revealed .choice.correct { opacity: 1; border-color: var(--ok); }
+.choices.revealed .choice.correct::before { color: var(--ok); }
 .note strong { color: var(--fg); }
 
 @keyframes fade-in { from { opacity: 0; transform: translateY(8px); } }

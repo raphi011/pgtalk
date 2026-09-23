@@ -1,0 +1,23 @@
+export const fixture = "storage";
+export const title = "Quiz: ctid";
+
+# An app caches each row's `ctid`. What breaks?
+
+<Choices revealAt={3}>
+  <Choice>Nothing: a `ctid` is a stable row id</Choice>
+  <Choice correct>An update moves the row, and the cached address points at an old version</Choice>
+  <Choice>A `ctid` is only valid inside the transaction that read it</Choice>
+  <Choice>Each session sees a different `ctid` for the same row</Choice>
+</Choices>
+
+<Runnable appearAt={2} hideAt={3} name="before" sql="SELECT ctid, id FROM orders WHERE id = 1;" />
+
+<Runnable appearAt={2} against="before" sql="UPDATE orders SET status = status WHERE id = 1 RETURNING ctid, id;" />
+
+<Note appearAt={3}>
+
+**Address, not identity.** Even an update that changes nothing writes a new
+version at a new `ctid`. Once a vacuum frees the old slot, the cached address
+can point at a different row altogether.
+
+</Note>

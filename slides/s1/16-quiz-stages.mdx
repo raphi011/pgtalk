@@ -1,0 +1,26 @@
+export const fixture = "orders";
+export const title = "Quiz: stages";
+
+# Which stage rejects this statement?
+
+<Query sql="SELECT nope FROM customers;" />
+
+<Choices revealAt={3}>
+  <Choice>The parser</Choice>
+  <Choice correct>The analyzer</Choice>
+  <Choice>The planner</Choice>
+  <Choice>The executor</Choice>
+</Choices>
+
+<Sessions>
+  <Runnable session="s1" sql="SELECT nope FROM customers;" appearAt={2} />
+  <Runnable session="s2" sql="SELECT nope FRUM customers;" appearAt={2} />
+</Sessions>
+
+<Note appearAt={3}>
+
+**The grammar is fine; the name is not.** Only the analyzer has the catalog
+open, so only it can say `nope` is not a column. A misspelt keyword dies one
+stage earlier, as a syntax error.
+
+</Note>

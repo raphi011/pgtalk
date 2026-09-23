@@ -1,0 +1,18 @@
+export const title = "Quiz: HOT";
+
+# `orders` has indexes on `id` and `customer_id`. Which update can skip the indexes?
+
+<Choices revealAt={2}>
+  <Choice>`SET customer_id = 42`</Choice>
+  <Choice correct>`SET status = 'shipped'`, if the page has room</Choice>
+  <Choice>Either one, if the page has room</Choice>
+  <Choice>Neither: every update writes to every index</Choice>
+</Choices>
+
+<Note appearAt={2}>
+
+**HOT needs two things:** no indexed column changes, and the new version fits
+on the same page. Then the indexes keep pointing at the old slot, and a
+forward pointer takes a reader the rest of the way.
+
+</Note>

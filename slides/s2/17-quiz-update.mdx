@@ -1,0 +1,20 @@
+export const title = "Quiz: UPDATE";
+
+# What does this statement do on the heap page?
+
+<Query sql="UPDATE orders SET status = 'shipped' WHERE id = 7;" />
+
+<Choices revealAt={2}>
+  <Choice>Overwrites the `status` bytes in place</Choice>
+  <Choice correct>Writes a new version, and marks the old one with `xmax`</Choice>
+  <Choice>Deletes the old row and reuses its space at once</Choice>
+  <Choice>Moves the row to the end of the table</Choice>
+</Choices>
+
+<Note appearAt={2}>
+
+**An update is an insert plus a mark.** The old version stays, byte for byte,
+because a transaction that started earlier may still need to read it. It
+becomes garbage only once no snapshot can see it.
+
+</Note>

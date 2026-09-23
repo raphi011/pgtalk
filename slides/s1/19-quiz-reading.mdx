@@ -1,0 +1,21 @@
+export const title = "Quiz: reading a plan";
+
+# A slow plan: where do you start?
+
+The `Hash Join` took 90% of the time. The `Seq Scan` under it estimated 200
+rows and returned 180,000.
+
+<Choices revealAt={2}>
+  <Choice>The `Hash Join`: that is where the time went</Choice>
+  <Choice correct>The `Seq Scan`'s estimate: the join was chosen for 200 rows</Choice>
+  <Choice>Raise `work_mem` so the hash fits in memory</Choice>
+  <Choice>Rewrite the query so the join is not needed</Choice>
+</Choices>
+
+<Note appearAt={2}>
+
+**The slowest node is usually the victim.** The plan above the scan was priced
+for 200 rows. Find out why the estimate was off: stale statistics, or an
+expression the planner cannot see through.
+
+</Note>

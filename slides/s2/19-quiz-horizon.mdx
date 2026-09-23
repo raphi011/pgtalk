@@ -1,0 +1,18 @@
+export const title = "Quiz: the xmin horizon";
+
+# Autovacuum runs every few minutes, and `orders` keeps growing. What do you check first?
+
+<Choices revealAt={2}>
+  <Choice>Lower `autovacuum_vacuum_scale_factor` so it runs more often</Choice>
+  <Choice correct>The oldest open transaction, in `pg_stat_activity`</Choice>
+  <Choice>Whether `orders` has too many indexes</Choice>
+  <Choice>Schedule a nightly `VACUUM FULL`</Choice>
+</Choices>
+
+<Note appearAt={2}>
+
+**Vacuum cannot remove what a snapshot might still read.** One idle
+transaction holds back cleanup on every table in the cluster. Find the oldest
+`backend_xmin`, then find out why it is open.
+
+</Note>

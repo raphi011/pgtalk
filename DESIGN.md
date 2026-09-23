@@ -296,6 +296,20 @@ put before the answer is on screen. A prompt visible from step 0 has been read
 and half-answered before the presenter reaches it. Unlike a `<Note>` it
 reserves no height: it is not replaced by a later one.
 
+**A3d. Every session ends on a quiz.** Five questions, one per slide, after a
+slide that announces the quiz and its rules, and before the closing slide so
+the session still ends on what to do the next working day (F2). Each one checks a concept the rest of the series builds on, not a
+detail. The room answers by show of hands: phones and a live poll were
+rejected, because they depend on the room's wifi (F1) and would add a second
+system to keep running. The quiz costs about five minutes over F2's 35, which
+was accepted.
+
+`<Choices revealAt>` letters its `<Choice>` children A, B, C, D, since `1`-`9`
+already run blocks, and on `revealAt` dims all but the one marked `correct`.
+Where the answer can be shown rather than told, a block appears between the
+options and the reveal, so the room commits before the query runs. The slide's
+notes take each wrong option and the misconception behind it.
+
 **A3a. `appearAt`/`hideAt` on a runnable block too.** A demo whose point is a
 before-and-after — vacuum, HOT, the xmin horizon — runs six or eight blocks,
 and stacking them all pushes the interesting one off the bottom of the screen,
@@ -329,6 +343,18 @@ perhaps one slide in twenty.
 from the floor go to the REPL (`` ` ``), which takes any SQL without disturbing
 the slide's block. The editing path is kept rather than removed so a later
 slide can want it back.
+
+**A5c. SQL in a heading is highlighted, and a statement leaves the heading.**
+Inline code inside a slide's `h1` is coloured with the same Shiki theme as a
+block, so a keyword or table name reads as code rather than as more purple
+words. A whole statement does not belong in a heading at all: it wraps at a
+heading's size and splits the question around it. A quiz question about one
+says "this statement" and shows it underneath in a `<Query>`, a highlighted
+block with no session that nothing can run. It applies to every
+heading, not only the quiz, so a keyword looks the same in every title. Inline
+code elsewhere is left as it was: in prose and notes it is as often
+a setting or a function name as SQL, and highlighting would colour it
+inconsistently.
 
 **A5a. `<Morph>` for one statement becoming another form of itself.** Stepped,
 read-only SQL that animates token by token between texts (via
@@ -375,9 +401,9 @@ it four times.
 2. ~~The WebSocket session layer.~~ `just smoke` proves E1, E2 and E4.
 3. ~~Step machinery and the diagram DSL.~~
 4. ~~The `EXPLAIN` tree.~~
-5. ~~Session 1 content.~~ Fourteen slides in `slides/s1/`.
-6. ~~Session 2 content.~~ Fifteen slides in `slides/s2/`, on the `storage` and
-   `bloat` fixtures.
+5. ~~Session 1 content.~~ Twenty slides in `slides/s1/`, six of them the quiz.
+6. ~~Session 2 content.~~ Twenty-one slides in `slides/s2/`, on the `storage` and
+   `bloat` fixtures, six of them the quiz.
 7. Sessions 3 to 5. Session 3 will want an indexed copy of the dataset.
 
 `just shots` renders every slide through the real keyboard path and fails on

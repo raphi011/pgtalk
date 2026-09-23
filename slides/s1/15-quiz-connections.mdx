@@ -1,0 +1,18 @@
+export const title = "Quiz: connections";
+
+# Your app holds 50 open connections. How many backend processes serve them?
+
+<Choices revealAt={2}>
+  <Choice>One: the postmaster handles all of them</Choice>
+  <Choice>One per CPU core, shared between connections</Choice>
+  <Choice correct>Fifty, one per connection, idle or not</Choice>
+  <Choice>None until a query arrives</Choice>
+</Choices>
+
+<Note appearAt={2}>
+
+**One connection, one process, for its whole life.** The postmaster only
+forks. An idle connection still has its process, with its caches, `SET`s and
+temporary tables, which is why `max_connections` is not free.
+
+</Note>

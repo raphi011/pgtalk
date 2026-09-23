@@ -1,0 +1,28 @@
+export const fixture = "orders";
+export const title = "Quiz: estimates";
+
+# Where does the planner's row estimate for this come from?
+
+<Query sql="SELECT * FROM orders WHERE status = 'shipped';" />
+
+<Choices revealAt={3}>
+  <Choice>The planner counts the matching rows before choosing</Choice>
+  <Choice correct>Statistics `ANALYZE` took from a sample of the table</Choice>
+  <Choice>The actual row count from the last time the query ran</Choice>
+  <Choice>A fixed guess, the same for every column</Choice>
+</Choices>
+
+<Runnable
+  appearAt={2}
+  sql={`SELECT most_common_vals, most_common_freqs
+FROM pg_stats
+WHERE tablename = 'orders' AND attname = 'status';`}
+/>
+
+<Note appearAt={3}>
+
+**The planner never reads a row.** It multiplies the frequency `ANALYZE`
+stored by the table's row count. If those statistics are stale, the estimate
+is wrong, and the arithmetic built on it is correct and useless.
+
+</Note>

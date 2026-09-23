@@ -1,0 +1,18 @@
+export const title = "Quiz: the executor";
+
+# There is no index on `status`. Which query can stop reading `orders` early?
+
+<Choices revealAt={2}>
+  <Choice>`SELECT count(*) FROM orders WHERE status = 'shipped'`</Choice>
+  <Choice correct>`SELECT * FROM orders WHERE status = 'shipped' LIMIT 10`</Choice>
+  <Choice>`SELECT max(total_cents) FROM orders`</Choice>
+  <Choice>`SELECT status, count(*) FROM orders GROUP BY status`</Choice>
+</Choices>
+
+<Note appearAt={2}>
+
+**Rows are pulled one at a time.** `Limit` stops asking after ten, so the scan
+is never asked for the eleventh. Every other query aggregates, and an
+aggregate needs every row before it can answer.
+
+</Note>

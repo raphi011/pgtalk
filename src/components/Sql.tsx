@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { highlighter } from "../highlight.js";
 
-function useHighlighted(sql: string) {
+export function useHighlighted(sql: string) {
   const [html, setHtml] = useState("");
   useEffect(() => {
     let live = true;
