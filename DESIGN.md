@@ -59,7 +59,7 @@ nothing on stage moves underneath them.
 
 Keys: `->`/`<-` step, `Down`/`Up` slide, `Enter` run the focused block,
 `1`-`9` run a block by position, `r` reset the slide, `e` edit SQL, `n` notes,
-`` ` `` REPL, `g` jump to a slide.
+`` ` `` REPL, `g` find a slide.
 
 The focused block is the first on the slide that has not run yet, falling back
 to the last once they all have. On a `<Sessions>` slide that makes `Enter`
@@ -88,6 +88,18 @@ every session it is reset on a slide change (E4), so a transaction left open
 in it cannot hold a lock across into the next demo. The scrollback is kept
 apart from the slide's block outputs and survives navigation; only the
 connection behind it does not.
+
+**F4c. `g` opens a quick switcher.** A search box over the slide lists the
+slides of one session, starting with the current one; `Left`/`Right` change
+session. One list of every session's slides was too long to scan, and the
+session in hand is nearly always the one wanted. The arrows no longer move the
+caret, which a search of a word or two does not miss. A number matches a slide
+number exactly and any other word a part of the title, so `12` still jumps to
+slide 12. `Up`/`Down` choose, `PgUp`/`PgDn` move a screenful, `Enter` goes,
+`Esc` closes; the deck ignores its own keys while the switcher is open, as it
+does for the REPL. It replaced a `prompt()` that took a slide number only:
+finding the slide someone is asking about by remembering its number fails
+mid-talk, and a browser dialog is a modal the deck cannot style or dismiss.
 
 ## Stack
 

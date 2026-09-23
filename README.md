@@ -21,7 +21,7 @@ just dev         # http://127.0.0.1:5173
 
 Keys: `→`/`←` step, `↓`/`↑` slide, `Enter` run the last visible block,
 `1`–`9` run the nth, `r` reset the fixture, `n` notes, `` ` `` REPL,
-`g` jump to a slide.
+`g` find a slide by number or title; left and right change session.
 
 ## Checks
 
