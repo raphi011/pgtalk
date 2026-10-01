@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { lab, useLab } from "../lab.js";
+import { AuthoringContext } from "../mdx.js";
 import { StepContext } from "../components/Step.js";
-import { Repl } from "../components/Repl.js";
 import { Switcher } from "./Switcher.js";
+import { Shortcuts } from "./Shortcuts.js";
 import { RegistryContext, type BlockHandle } from "./registry.js";
-import { useHashRoute, writeHash } from "./route.js";
+import { writeHash, type Route } from "./route.js";
 import { ZoomContext } from "./zoom.js";
-import { sessionIds, slidesOf } from "./slides.js";
+import { slidesOf } from "./slides.js";
+import type { LabIntegration, Talk } from "./talks.js";
 
 /** Shows a slide fully built; clamped down to its real step count on mount. */
 const ALL_STEPS = 9999;
@@ -36,16 +37,20 @@ function useStageZoom() {
   return [zoom, ref] as const;
 }
 
-export function Deck() {
-  const [route, setRoute] = useHashRoute(sessionIds[0] ?? "s1");
+export function Deck({ talk, route, setRoute, integration }: {
+  talk: Talk;
+  route: Route;
+  setRoute: (route: Route) => void;
+  integration?: LabIntegration;
+}) {
   const [steps, setSteps] = useState({ path: "", max: 0 });
   const [showNotes, setShowNotes] = useState(false);
-  const [showRepl, setShowRepl] = useState(false);
+  const [showLabOverlay, setShowLabOverlay] = useState(false);
   const [showSwitcher, setShowSwitcher] = useState(false);
-  const { connected, fatal } = useLab();
+  const [showShortcuts, setShowShortcuts] = useState(false);
   const [zoom, stageAreaRef] = useStageZoom();
 
-  const deck = slidesOf(route.session);
+  const deck = slidesOf(talk.id, route.session);
   const index = Math.min(route.slide, Math.max(0, deck.length - 1));
   const slide = deck[index];
 
@@ -72,22 +77,8 @@ export function Deck() {
   // having to know the count in advance.
   const step = Math.min(route.step, maxStep);
   useEffect(() => {
-    writeHash({ session: route.session, slide: index, step });
-  }, [route.session, index, step]);
-
-  // Restoring only on a change of fixture keeps navigation inside one fixture
-  // instant, and entering a slide cold correct (E4).
-  const current = useRef<string | null>(null);
-  useEffect(() => {
-    if (slide?.fixture && slide.fixture !== current.current) {
-      current.current = slide.fixture;
-      lab.restore(slide.fixture);
-    } else {
-      // Same fixture, new slide: the data is already right, but a SET or an
-      // open transaction from the previous slide is not.
-      lab.resetSessions();
-    }
-  }, [path]);
+    writeHash({ talk: talk.id, session: route.session, slide: index, step });
+  }, [talk.id, route.session, index, step]);
 
   const blocks = useRef<BlockHandle[]>([]);
   // Which blocks have already run, by the stable id a block keeps across the
@@ -126,13 +117,21 @@ export function Deck() {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      // Help takes the keyboard without moving or running the slide (F4d).
+      if (showShortcuts) {
+        if (e.key === "?" || e.key === "Escape") {
+          setShowShortcuts(false);
+          e.preventDefault();
+        }
+        return;
+      }
       // The switcher handles its own keys, closing included, on its input.
       if (showSwitcher) return;
-      if (showRepl) {
-        // Like the notes, the REPL takes the keyboard while it is open. Its
+      if (showLabOverlay) {
+        // Like the notes, the Lab overlay takes the keyboard while it is open (S5). Its
         // own keys are handled on its input; only closing it is the deck's.
-        if (e.key === "Escape" || (e.key === "`" && !(e.target instanceof HTMLTextAreaElement))) {
-          setShowRepl(false);
+        if (e.key === "Escape" || (integration?.closeOverlayKeys.includes(e.key) && !(e.target instanceof HTMLTextAreaElement))) {
+          setShowLabOverlay(false);
           e.preventDefault();
         }
         return;
@@ -171,35 +170,29 @@ export function Deck() {
         case "ArrowUp":
           go(-1);
           break;
-        case "Enter":
-          focused?.run();
-          break;
-        case "e":
-          focused?.toggleEdit();
-          break;
         case "n":
           setShowNotes(true);
-          break;
-        case "`":
-          setShowRepl(true);
-          break;
-        case "r":
-          // Force: the fixture is by definition already loaded, and the point
-          // of the key is to undo whatever the last few minutes did to it.
-          if (slide?.fixture) lab.restore(slide.fixture, true);
           break;
         case "g":
           setShowSwitcher(true);
           break;
+        case "?":
+          setShowShortcuts(true);
+          break;
         default:
-          if (/^[1-9]$/.test(e.key)) blocks.current[Number(e.key) - 1]?.run();
+          if (integration?.onKey(e.key, {
+            fixture: slide?.fixture,
+            focused,
+            blocks: blocks.current,
+            openOverlay: () => setShowLabOverlay(true),
+          })) e.preventDefault();
           return;
       }
       e.preventDefault();
     };
     addEventListener("keydown", onKey);
     return () => removeEventListener("keydown", onKey);
-  }, [route, step, maxStep, go, slide?.fixture, showNotes, showRepl, showSwitcher]);
+  }, [route, step, maxStep, go, slide?.fixture, showNotes, showLabOverlay, showSwitcher, showShortcuts, integration]);
 
   // The overlay scrolls with the keyboard only while it holds focus, and it
   // opens at the top rather than where it was last left.
@@ -217,64 +210,75 @@ export function Deck() {
 
   const Body = slide.default;
   const Notes = slide.Notes;
+  const Navigation = integration?.Navigation;
+  const Status = integration?.Status;
+  const Overlay = integration?.Overlay;
   return (
-    <RegistryContext.Provider value={registry}>
-      <StepContext.Provider value={{ step, register }}>
-        <div className="deck">
-          <div className="stage-area" ref={stageAreaRef}>
-            <div className="stage" style={{ zoom }}>
-              <div className="stage-body">
-                <article className="slide">
-                  <ZoomContext.Provider value={zoom}>
-                    <Body />
-                  </ZoomContext.Provider>
-                </article>
+    <AuthoringContext.Provider value={integration?.components ?? {}}>
+      <RegistryContext.Provider value={registry}>
+        <StepContext.Provider value={{ step, register }}>
+          <div className="deck">
+            {Navigation ? <Navigation path={path} fixture={slide.fixture} /> : null}
+            <div className="stage-area" ref={stageAreaRef}>
+              <div className="stage" style={{ zoom }}>
+                <div className="stage-body">
+                  <article className="slide">
+                    <ZoomContext.Provider value={zoom}>
+                      <Body />
+                    </ZoomContext.Provider>
+                  </article>
+                </div>
               </div>
             </div>
-          </div>
 
-          <footer className="chrome">
-            <span className={connected ? "dot ok" : "dot bad"} />
-            <span>{route.session}</span>
-            <span>
-              {index + 1} / {deck.length}
-            </span>
-            {maxStep > 0 ? (
+            <footer className="chrome">
+              <a href="#/" aria-label="Choose a talk">All talks</a>
+              <span>{talk.title}</span>
+              <span>{route.session}</span>
               <span>
-                step {step} / {maxStep}
+                {index + 1} / {deck.length}
               </span>
+              {maxStep > 0 ? (
+                <span>
+                  step {step} / {maxStep}
+                </span>
+              ) : null}
+              {Status ? <Status fixture={slide.fixture} /> : null}
+              <span className="spacer" />
+              <button onClick={() => setShowShortcuts(true)} aria-label="Show keyboard shortcuts">? shortcuts</button>
+            </footer>
+
+            {showNotes && Notes ? (
+              <aside className="notes" tabIndex={-1} ref={notesRef}>
+                <header className="notes-head">
+                  <span>{slide.title ?? `slide ${index + 1}`}</span>
+                  <span className="spacer" />
+                  <span>n or esc to close</span>
+                </header>
+                <div className="notes-body">
+                  <Notes />
+                </div>
+              </aside>
             ) : null}
-            {slide.fixture ? <span className="fixture">{slide.fixture}</span> : null}
-            {fatal ? <span className="fatal">{fatal}</span> : null}
-          </footer>
 
-          {showNotes && Notes ? (
-            <aside className="notes" tabIndex={-1} ref={notesRef}>
-              <header className="notes-head">
-                <span>{slide.title ?? `slide ${index + 1}`}</span>
-                <span className="spacer" />
-                <span>n or esc to close</span>
-              </header>
-              <div className="notes-body">
-                <Notes />
-              </div>
-            </aside>
-          ) : null}
+            {showLabOverlay && Overlay ? <Overlay /> : null}
 
-          {showRepl ? <Repl /> : null}
+            {showShortcuts ? <Shortcuts extraGroups={integration?.shortcuts} onClose={() => setShowShortcuts(false)} /> : null}
 
-          {showSwitcher ? (
-            <Switcher
-              current={{ session: route.session, index }}
-              onGo={(session, slide) => {
-                setShowSwitcher(false);
-                setRoute({ session, slide, step: 0 });
-              }}
-              onClose={() => setShowSwitcher(false)}
-            />
-          ) : null}
-        </div>
-      </StepContext.Provider>
-    </RegistryContext.Provider>
+            {showSwitcher ? (
+              <Switcher
+                talk={talk}
+                current={{ session: route.session, index }}
+                onGo={(session, slide) => {
+                  setShowSwitcher(false);
+                  setRoute({ talk: talk.id, session, slide, step: 0 });
+                }}
+                onClose={() => setShowSwitcher(false)}
+              />
+            ) : null}
+          </div>
+        </StepContext.Provider>
+      </RegistryContext.Provider>
+    </AuthoringContext.Provider>
   );
 }

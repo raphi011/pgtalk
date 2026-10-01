@@ -1,12 +1,13 @@
 # AGENTS.md
 
-A live talk deck about PostgreSQL internals: MDX slides, and SQL run against the
-local PostgreSQL through a WebSocket session layer inside the Vite dev server.
+A collection of MDX talk decks. PostgreSQL is the first talk; its optional Lab
+runs SQL through a WebSocket session layer inside the Vite dev server.
 `README.md` has setup and keys; the `justfile` has every command.
 
-## DESIGN.md is the source of truth
+## DESIGN.md and talks/postgres/DESIGN.md are the source of truth
 
-Every decision has an ID (`F4a`, `E2`, `A3a` ...). Code comments cite those IDs
+Shared decisions live in DESIGN.md; PostgreSQL/content decisions live in
+talks/postgres/DESIGN.md. Every decision has an ID (`F4a`, `E2`, `A3a` ...). Code comments cite those IDs
 instead of re-explaining, and a comment's reasoning belongs in DESIGN.md once it
 outgrows a line or two. Read the entry a change touches before making it. When a
 change makes or alters a decision (a new key, a new component, a new rule about
@@ -15,10 +16,10 @@ format: bold ID and one-line claim, then the reason and what was rejected.
 
 ## Slides
 
-- `slides/<session>/NN-name.mdx`, each with a sibling `NN-name.notes.md` (F3).
+- `talks/<talk>/slides/<session>/NN-name.mdx`, each with a sibling `NN-name.notes.md` (F3).
   The `NN` prefix is the order.
 - A slide states `fixture` and `title` as ESM exports (`export const fixture =
-  "storage";`), not frontmatter. DESIGN.md A1 still shows frontmatter.
+  "storage";`), not frontmatter. Fixtures belong only to Lab-backed slides.
 - Slides are laid out on a fixed 1600×900 stage (F4a) and must fit it:
   the presenter cannot scroll. Retire blocks with `hideAt` (A3a) to make room
   rather than shrinking type.
@@ -29,19 +30,19 @@ format: bold ID and one-line claim, then the reason and what was rejected.
 
 - One dedicated `pg.Client` per named session, never a pool (S3): an open
   transaction must survive to the next statement.
-- Values stay as the text PostgreSQL sent (`textOnly` in `server/lab.ts`).
+- Values stay as the text PostgreSQL sent (`textOnly` in `server/labs/postgres/lab.ts`).
 - A statement that never settles is `blocked`, not `failed` (E2). No timeouts,
   no fallback to recorded output (E3).
 
 ## Verifying
 
-Everything runs against a live `just dev` on port 5173 and a bootstrapped local
-PostgreSQL (`just bootstrap`). Start `just dev` in the background if it is not
+Everything runs against a live `just dev` on port 5173. PostgreSQL checks also
+need a bootstrapped local PostgreSQL (`just postgres bootstrap`). Start `just dev` in the background if it is not
 already answering.
 
 - `npx tsc --noEmit -p .` for types.
-- `just smoke` after touching `server/` or `src/lab.ts`.
-- `just shots <session>` after touching anything a slide renders; it fails on a
+- `just smoke` after touching `server/` or `src/labs/postgres/client.ts`.
+- `just shots <talk> <session>` after touching anything a slide renders; it fails on a
   console error or a slide overflowing the stage. Read the PNGs in `test/shots/`
   to check layout.
 - `node test/shoot.mjs 's1/3/0:ArrowRight,Enter'` shoots one position after

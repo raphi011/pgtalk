@@ -6,7 +6,7 @@ import type {
   ServerMessage,
   SessionName,
   SessionState,
-} from "../server/protocol.js";
+} from "../../../server/labs/postgres/protocol.js";
 
 export interface BlockOutput {
   session: SessionName;
@@ -50,6 +50,7 @@ let state: LabState = { connected: false, sessions: {}, blocks: {}, pending: {},
 let replCount = 0;
 const listeners = new Set<() => void>();
 let socket: WebSocket | null = null;
+let generation = 0;
 
 function set(next: Partial<LabState>) {
   state = { ...state, ...next };
@@ -58,13 +59,16 @@ function set(next: Partial<LabState>) {
 
 function connect() {
   if (socket) return;
-  socket = new WebSocket(`ws://${location.host}/lab`);
+  const connection = new WebSocket(`ws://${location.host}/lab`);
+  socket = connection;
   // A fatal is about the connection it arrived on; a fresh one starts clean.
   socket.onopen = () => set({ connected: true, fatal: undefined });
   socket.onclose = () => {
+    if (socket !== connection) return;
     set({ connected: false });
     socket = null;
-    setTimeout(connect, 500);
+    const previous = generation;
+    setTimeout(() => { if (generation === previous) connect(); }, 500);
   };
   socket.onmessage = (ev) => apply(JSON.parse(ev.data) as ServerMessage);
 }
@@ -115,7 +119,9 @@ function apply(msg: ServerMessage) {
 
 function send(msg: ClientMessage) {
   connect();
+  const previous = generation;
   const wait = () => {
+    if (previous !== generation) return;
     if (socket?.readyState === WebSocket.OPEN) socket.send(JSON.stringify(msg));
     else setTimeout(wait, 50);
   };
@@ -123,6 +129,28 @@ function send(msg: ClientMessage) {
 }
 
 export const lab = {
+  disconnect() {
+    // Leaving the selected talk cancels reconnects and queued sends (S5).
+    generation++;
+    if (socket?.readyState === WebSocket.OPEN) socket.send(JSON.stringify({ type: "reset-sessions" }));
+    const previous = socket;
+    socket = null;
+    previous?.close();
+    const now = performance.now();
+    set({
+      connected: false, sessions: {}, blocks: {}, pending: {},
+      // The closed socket cannot deliver a reset reply to an unfinished prompt (E3).
+      repl: state.repl.map((entry) => entry.output ? entry : {
+        ...entry,
+        output: {
+          session: REPL_SESSION,
+          durationMs: now - entry.startedAt,
+          at: now,
+          error: { message: "session was reset while this statement was running" },
+        },
+      }),
+    });
+  },
   run(blockId: string, session: SessionName, sql: string) {
     set({ pending: { ...state.pending, [blockId]: { session, startedAt: performance.now() } } });
     send({ type: "run", blockId, session, sql });

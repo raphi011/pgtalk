@@ -7,11 +7,11 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { lab, useLab } from "../lab.js";
+import { lab, useLab } from "./client.js";
 import { ResultPanel } from "./ResultPanel.js";
-import { Sql } from "./Sql.js";
+import { Sql } from "../../components/Sql.js";
 import { useBlock } from "./useBlock.js";
-import type { SessionState } from "../../server/protocol.js";
+import type { SessionState } from "../../../server/labs/postgres/protocol.js";
 
 /** Set by <Sessions> so a nested block knows it is one of a pair. */
 const Paired = createContext(false);

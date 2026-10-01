@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
-import { lab, REPL_SESSION, useLab } from "../lab.js";
+import { lab, REPL_SESSION, useLab } from "./client.js";
 import { Elapsed, STATE_LABEL } from "./Runnable.js";
 import { ResultPanel } from "./ResultPanel.js";
-import { Sql } from "./Sql.js";
+import { Sql } from "../../components/Sql.js";
 
 const noop = () => {};
 

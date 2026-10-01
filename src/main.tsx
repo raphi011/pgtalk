@@ -1,10 +1,10 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { Deck } from "./deck/Deck.js";
+import { App } from "./deck/App.js";
 import "./styles.css";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <Deck />
+    <App />
   </StrictMode>,
 );

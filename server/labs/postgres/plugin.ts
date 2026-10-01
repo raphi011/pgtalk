@@ -19,10 +19,8 @@ export function labPlugin(): Plugin {
       };
 
       const lab = new Lab(broadcast);
-      const ready = lab.start().catch((err) => {
-        broadcast({ type: "fatal", message: String(err) });
-        throw err;
-      });
+      // A database-free talk never starts PostgreSQL connections (S5).
+      let ready: Promise<void> | undefined;
 
       const wss = new WebSocketServer({ noServer: true });
       server.httpServer?.on("upgrade", (req, socket, head) => {
@@ -36,7 +34,7 @@ export function labPlugin(): Plugin {
         ws.on("message", async (data) => {
           const msg = JSON.parse(String(data)) as ClientMessage;
           try {
-            await ready;
+            await (ready ??= lab.start());
             if (msg.type === "run") await lab.run(msg.blockId, msg.session, msg.sql);
             else if (msg.type === "cancel") await lab.cancel(msg.session);
             else if (msg.type === "restore") await lab.restore(msg.fixture, msg.force);

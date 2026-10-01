@@ -12,5 +12,5 @@
     "verbatimModuleSyntax": true,
     "types": ["node", "vite/client"]
   },
-  "include": ["src", "server", "vite.config.ts", "slides"]
+  "include": ["src", "server", "vite.config.ts", "talks"]
 }

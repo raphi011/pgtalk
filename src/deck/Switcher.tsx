@@ -1,13 +1,14 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
-import { sessionIds, slidesOf } from "./slides.js";
+import { slidesOf } from "./slides.js";
+import type { Talk } from "./talks.js";
 
 /**
  * Every word must match: a number matches the slide's number exactly, any
  * other word a part of its title (F4c).
  */
-function search(query: string, session: string) {
+function search(query: string, talk: string, session: string) {
   const words = query.toLowerCase().split(/\s+/).filter(Boolean);
-  return slidesOf(session)
+  return slidesOf(talk, session)
     .map((s, index) => ({ index, title: s.title ?? "" }))
     .filter((e) =>
       words.every((w) => (/^\d+$/.test(w) ? Number(w) === e.index + 1 : e.title.toLowerCase().includes(w))),
@@ -20,10 +21,12 @@ function search(query: string, session: string) {
  * over the slide like the REPL and takes the keyboard while it is up.
  */
 export function Switcher({
+  talk,
   current,
   onGo,
   onClose,
 }: {
+  talk: Talk;
   current: { session: string; index: number };
   onGo: (session: string, index: number) => void;
   onClose: () => void;
@@ -31,7 +34,8 @@ export function Switcher({
   const [query, setQuery] = useState("");
   const [session, setSession] = useState(current.session);
   const [selected, setSelected] = useState(0);
-  const results = search(query, session);
+  const results = search(query, talk.id, session);
+  const sessionIds = talk.sessions;
   const list = useRef<HTMLOListElement>(null);
 
   useEffect(() => {
@@ -85,7 +89,7 @@ export function Switcher({
       <nav className="switcher-sessions">
         {sessionIds.map((id) => (
           <span key={id} className={id === session ? "active" : ""}>
-            {id} · {slidesOf(id)[0]?.title}
+            {id} · {slidesOf(talk.id, id)[0]?.title}
           </span>
         ))}
         <span className="switcher-hint">← → session</span>

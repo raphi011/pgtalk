@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect } from "react";
 import { BlockFrame } from "./Runnable.js";
 import { useBlock } from "./useBlock.js";
-import { useStep } from "./Step.js";
+import { useStep } from "../../components/Step.js";
 
 /** The subset of EXPLAIN (FORMAT JSON) a slide reads. */
 interface PlanNode {

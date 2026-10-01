@@ -1,5 +1,5 @@
-import type { BlockOutput } from "../lab.js";
-import type { Field, QueryResult } from "../../server/protocol.js";
+import type { BlockOutput } from "./client.js";
+import type { Field, QueryResult } from "../../../server/labs/postgres/protocol.js";
 
 /** Type OIDs PostgreSQL uses for numbers; psql right-aligns these. */
 const NUMERIC = new Set([20, 21, 23, 700, 701, 1700]);

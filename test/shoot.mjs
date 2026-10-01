@@ -1,6 +1,7 @@
 // Screenshot deck positions against a running `just dev`, so slide layout and
 // the step machinery can be checked without a human at the keyboard.
-//   node test/shoot.mjs s1/1/0 s1/2/2:Enter,Enter s2/8/0:ArrowRight,Enter,wait ...
+//   node test/shoot.mjs postgres/s1/1/0 postgres/s2/8/0:ArrowRight,Enter,wait ...
+// Old session-only positions still enter PostgreSQL (F4e).
 // A position may carry keys to press after it loads, so the keyboard path is
 // exercised rather than the URL alone. `type=<text>` types text instead of
 // pressing a key, for the REPL; it cannot contain a comma or a colon.

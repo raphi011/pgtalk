@@ -2,7 +2,7 @@ import { useState } from "react";
 import { BlockFrame } from "./Runnable.js";
 import { ResultPanel } from "./ResultPanel.js";
 import { useBlock } from "./useBlock.js";
-import type { QueryResult } from "../../server/protocol.js";
+import type { QueryResult } from "../../../server/labs/postgres/protocol.js";
 
 /** What `heap_page_items` calls each state of a line pointer. */
 const LP_FLAG: Record<string, string> = { "0": "unused", "1": "normal", "2": "redirect", "3": "dead" };

@@ -1,8 +1,8 @@
 import { useEffect, useId, useRef, useState } from "react";
-import { lab, useLab } from "../lab.js";
-import { useRegistry } from "../deck/registry.js";
-import { useAppeared } from "./Step.js";
-import type { SessionState } from "../../server/protocol.js";
+import { lab, useLab } from "./client.js";
+import { useRegistry } from "../../deck/registry.js";
+import { useAppeared } from "../../components/Step.js";
+import type { SessionState } from "../../../server/labs/postgres/protocol.js";
 
 /**
  * Whether blocks can be edited in place (A5b). Off while questions from the
